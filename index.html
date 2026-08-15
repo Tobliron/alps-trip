@@ -173,11 +173,40 @@ tfoot td{font-weight:600;background:var(--ice);font-family:var(--font-mono)}
 .add-inline input{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 9px}
 
 /* ---------- notes ---------- */
-#notesArea{width:100%;min-height:280px;border:1px solid var(--line);border-radius:var(--radius);padding:16px;font-size:14px;line-height:1.7;resize:vertical;background:#fff}
 .save-hint{font-size:12px;color:var(--rock-soft);margin-top:8px;font-family:var(--font-mono)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .storage-warn{display:none;background:#FDF3D8;border:1px solid #E3C878;border-radius:var(--radius);padding:13px 16px;margin-bottom:18px;font-size:13.5px;color:#6B5416}
 .storage-warn strong{display:block;margin-bottom:2px;color:#8A6620}
+
+/* ---------- identity + sync status ---------- */
+.status-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.sync-pill{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.sync-pill.ok{background:#E2EDE8;color:var(--pine)}
+.sync-pill.warn{background:var(--gold-soft);color:#8A6620}
+.who-line{font-size:12.5px;color:var(--rock-soft);white-space:nowrap}
+.who-line b{color:var(--pine)}
+.linkish{background:none;border:none;padding:0;font-size:inherit;color:var(--dusk);text-decoration:underline;cursor:pointer}
+.linkish:hover{color:var(--pine)}
+.who-choices{display:flex;gap:8px;flex-wrap:wrap}
+.who-chip{display:inline-block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:var(--dusk-soft);color:#33566F;padding:2px 8px;border-radius:99px;flex-shrink:0}
+
+/* ---------- notes ---------- */
+.note-form textarea{width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;font-size:14px;line-height:1.6;resize:vertical;background:#fff}
+.note-form-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.note-list{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.note{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px}
+.note-head{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.note-when{font-family:var(--font-mono);font-size:11px;color:var(--rock-soft)}
+.note-del{margin-left:auto;font-size:12px}
+.note-body{font-size:14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.empty{color:var(--rock-soft);font-size:13.5px;padding:14px 0}
+
+/* ---------- activity feed ---------- */
+.act-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.act{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;display:flex;align-items:center;gap:10px;font-size:13.5px}
+.act-text{overflow-wrap:anywhere}
+.act-when{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--rock-soft);white-space:nowrap;flex-shrink:0}
+@media(max-width:640px){.act{flex-wrap:wrap}.act-when{margin-left:0;width:100%}}
 footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px;font-family:var(--font-mono);border-top:1px solid var(--line)}
 .credits{max-width:760px;margin:10px auto 0;font-family:var(--font-body);font-size:11px;line-height:1.7;color:#8C867D}
 .credits a{color:#8C867D}
@@ -250,10 +279,16 @@ footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px
     <button class="tab" data-tab="budget" role="tab">Budget</button>
     <button class="tab" data-tab="packing" role="tab">Packing</button>
     <button class="tab" data-tab="notes" role="tab">Notes</button>
+    <button class="tab" data-tab="activity" role="tab">Activity</button>
   </div>
 </nav>
 
 <main>
+
+<div class="status-bar">
+  <span class="who-line" id="whoAmI"></span>
+  <span class="sync-pill" id="syncPill">connecting…</span>
+</div>
 
 <div class="storage-warn" id="storageWarn" role="alert">
   <strong>Heads up — this browser isn't saving your changes.</strong>
@@ -397,14 +432,27 @@ footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px
 <!-- ============ NOTES ============ -->
 <section id="notes">
   <h2>Notes</h2>
-  <p class="sub">Scratchpad for the group — hut confirmation numbers, restaurant tips, who owes what.</p>
-  <textarea id="notesArea" placeholder="Type anything… it saves as you go."></textarea>
-  <div class="toolbar" style="margin-top:14px">
+  <p class="sub">Shared with the group — hut confirmation numbers, restaurant tips, who owes what. Every note shows who wrote it.</p>
+  <form class="note-form" onsubmit="addNote(event)">
+    <textarea id="noteInput" placeholder="Write a note for the group…" maxlength="2000" rows="3"></textarea>
+    <div class="note-form-actions">
+      <button type="submit" class="btn">Post note</button>
+    </div>
+  </form>
+  <div id="noteList" class="note-list"></div>
+  <div class="toolbar" style="margin-top:22px">
     <button class="btn ghost" onclick="exportData()">⬇ Export trip data (JSON backup)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆ Import backup</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
   </div>
-  <div class="save-hint" id="saveHint">Changes save automatically in this app. Use Export for a portable backup to share with the group.</div>
+  <div class="save-hint" id="saveHint">Changes save for everyone. Export a JSON backup for a copy you keep yourself.</div>
+</section>
+
+<!-- ============ ACTIVITY ============ -->
+<section id="activity">
+  <h2>Activity</h2>
+  <p class="sub">Who changed what, newest first. Names are self-declared — this is a record for the three of you, not a security log.</p>
+  <ul id="actList" class="act-list"></ul>
 </section>
 
 </main>
@@ -451,9 +499,42 @@ footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px
   </div>
 </dialog>
 
+<!-- who are you (identity, not login) -->
+<dialog id="whoModal">
+  <div class="modal-in">
+    <h3>Who's using this?</h3>
+    <p style="font-size:13.5px;color:var(--rock-soft);margin-bottom:14px">
+      So notes and changes show who made them. This isn't a login — there's no password
+      and nobody is locked out. Pick a name and this device remembers it.
+    </p>
+    <div id="whoChoices" class="who-choices"></div>
+    <form onsubmit="submitWhoOther(event)" style="margin-top:12px">
+      <div class="field"><label for="whoOther">Or type a name</label>
+        <input id="whoOther" maxlength="40" placeholder="e.g. Yoni" autocomplete="off"></div>
+      <div class="modal-actions"><button type="submit" class="btn">Use this name</button></div>
+    </form>
+  </div>
+</dialog>
+
 <script>
+/* ============ config ============ */
+/* Supabase project. The anon key is PUBLIC by design — it is meant to sit in
+   browser code. It grants exactly what the table policies in supabase-setup.sql
+   allow, and nothing more. Never put the service_role key here. */
+const SUPABASE_URL      = 'https://larkrtuakavfxfsxxgba.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmtydHVha2F2Znhmc3h4Z2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3OTY0NTYsImV4cCI6MjEwMjM3MjQ1Nn0.7-l34SugoNbWPMDKaHAGCMbGbFBLZXRPrdL_hckXMw8';
+
+/* Who can be picked as an author. EDIT THESE to the three real names —
+   this is the only place they appear. Anyone can also type their own. */
+const PEOPLE = ['Liron', 'Friend 2', 'Friend 3'];
+
+/* Which state keys are shared between everyone via Supabase. */
+const SHARED_KEYS = ['bookState','budgetVals','packState','customEvents'];
+
 /* ============ storage: localStorage, with in-memory fallback ============
-   Keyed under a namespace so it can't collide with anything else on the host.
+   This is now the local CACHE in front of Supabase, not the source of truth.
+   It is what makes the page work with no signal: everything renders from here
+   first, then reconciles with the server when a connection is available.
    Both methods stay async so every existing `await store.get/set` still works.
    If localStorage is unavailable (private window, blocked cookies, full disk)
    we keep working from memory for the session AND tell the user once — silent
@@ -493,7 +574,275 @@ function markSaved(){
   const h = document.getElementById('saveHint');
   if(!h || storageBroken) return;
   const t = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  h.textContent = `Saved in this browser at ${t}. Export a JSON backup to share with the group or move devices.`;
+  h.textContent = `Saved at ${t}. Export a JSON backup any time for a copy you control.`;
+}
+
+/* Everything below renders text other people typed. Escape it — shared data
+   from three friends is still untrusted input as far as the DOM is concerned. */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function whenText(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  const mins = Math.round((Date.now() - d.getTime()) / 60000);
+  if(mins < 1)   return 'just now';
+  if(mins < 60)  return mins + 'm ago';
+  if(mins < 1440) return Math.round(mins/60) + 'h ago';
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' +
+         d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ============ identity ============
+   A self-declared name, not a login. Nobody is authenticated and nobody is
+   locked out — this exists so a note or a tick can say who it came from. */
+let me = null;
+function renderIdentity(){
+  const el = document.getElementById('whoAmI');
+  if(!el) return;
+  el.innerHTML = me
+    ? `You are <b>${esc(me)}</b> <button class="linkish" onclick="openWho()">change</button>`
+    : `<button class="linkish" onclick="openWho()">Say who you are</button>`;
+}
+function openWho(){
+  const box = document.getElementById('whoChoices');
+  box.innerHTML = '';
+  PEOPLE.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn ghost'; b.textContent = p;
+    b.onclick = () => pickWho(p);
+    box.appendChild(b);
+  });
+  document.getElementById('whoOther').value = '';
+  document.getElementById('whoModal').showModal();
+}
+async function pickWho(name){
+  const clean = String(name || '').trim().slice(0, 40);
+  if(!clean) return;
+  me = clean;
+  await store.set('who', me);
+  document.getElementById('whoModal').close();
+  renderIdentity(); renderNotes();
+}
+function submitWhoOther(ev){
+  ev.preventDefault();
+  pickWho(document.getElementById('whoOther').value);
+}
+/* Writing requires a name, so attribution is never blank. */
+function requireMe(){
+  if(me) return true;
+  openWho();
+  return false;
+}
+
+/* ============ remote: Supabase REST ============
+   Plain fetch against PostgREST — deliberately no SDK, so there is no CDN
+   script to fail on a mountain road. The local cache above always renders
+   first; this layer reconciles when there is signal. */
+const REMOTE_ON = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+const REST = SUPABASE_URL.replace(/\/+$/,'') + '/rest/v1/';
+let syncOk = false, syncNote = REMOTE_ON ? 'connecting…' : 'local only';
+
+async function api(path, opts){
+  opts = opts || {};
+  const res = await fetch(REST + path, {
+    method: opts.method || 'GET',
+    headers: Object.assign({
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    }, opts.headers || {}),
+    body: opts.body
+  });
+  const text = await res.text();
+  if(!res.ok) throw new Error(`Supabase ${res.status} on ${path}: ${text.slice(0,200)}`);
+  /* PostgREST answers a plain insert with 201 and an EMPTY body (only
+     `Prefer: return=representation` gets you JSON back), and DELETE with 204.
+     Parsing unconditionally throws on those and — because the op then looks
+     failed — the retry loop writes the row again. Parse only if there is one. */
+  return text ? JSON.parse(text) : null;
+}
+
+/* ---- outbox: edits made offline survive a reload and go up later ---- */
+let queue = [], flushing = false;
+async function enqueue(op){
+  /* Only the newest value of a given state key matters — collapse the rest.
+     Skipped mid-flush so we never splice out the op currently being sent. */
+  if(op.t === 'state' && !flushing){
+    queue = queue.filter(q => !(q.t === 'state' && q.key === op.key));
+  }
+  queue.push(op);
+  await store.set('outbox', queue);
+  renderSync();
+  await flush();
+}
+async function runOp(op){
+  if(op.t === 'state'){
+    await api('trip_state', {
+      method:'POST',
+      headers:{ Prefer:'resolution=merge-duplicates' },
+      body: JSON.stringify([{ key:op.key, value:op.value, updated_by:op.by, updated_at:new Date().toISOString() }])
+    });
+  } else if(op.t === 'activity'){
+    await api('trip_activity', { method:'POST', body: JSON.stringify([{ author:op.by, action:op.action }]) });
+  } else if(op.t === 'note'){
+    await api('trip_notes', { method:'POST', body: JSON.stringify([{ author:op.by, body:op.body }]) });
+  } else if(op.t === 'noteDel'){
+    await api('trip_notes?id=eq.' + encodeURIComponent(op.id), { method:'DELETE' });
+  }
+}
+async function flush(){
+  if(!REMOTE_ON || flushing || !queue.length) return;
+  flushing = true;
+  try{
+    while(queue.length){
+      await runOp(queue[0]);
+      queue.shift();
+      await store.set('outbox', queue);
+    }
+    syncOk = true; syncNote = 'all changes synced';
+  }catch(e){
+    console.error('sync failed — keeping changes queued for retry:', e);
+    syncOk = false; syncNote = queue.length + ' change' + (queue.length===1?'':'s') + ' waiting for signal';
+  }finally{
+    flushing = false;
+    renderSync();
+  }
+}
+function renderSync(){
+  const el = document.getElementById('syncPill');
+  if(!el) return;
+  if(!REMOTE_ON){ el.className='sync-pill warn'; el.textContent='Local only — not shared'; return; }
+  if(queue.length){ el.className='sync-pill warn'; el.textContent = '⟳ ' + syncNote; return; }
+  el.className = 'sync-pill ' + (syncOk ? 'ok' : 'warn');
+  el.textContent = (syncOk ? '✓ ' : '⚠ ') + syncNote;
+}
+
+/* ---- the one call the rest of the page uses to change shared data ---- */
+async function saveShared(key, value, activityText){
+  await store.set(key, value);                       // instant, works offline
+  await enqueue({ t:'state', key, value, by: me || 'someone' });
+  if(activityText) await enqueue({ t:'activity', action: activityText, by: me || 'someone' });
+}
+
+/* ---- pulling everyone else's changes ---- */
+async function pullAll(){
+  if(!REMOTE_ON) { renderSync(); return; }
+  try{
+    const rows = await api('trip_state?select=key,value');
+    const remote = {};
+    rows.forEach(r => { remote[r.key] = r.value; });
+    /* Don't clobber edits still sitting in the outbox — those are newer. */
+    const pending = new Set(queue.filter(q => q.t === 'state').map(q => q.key));
+    for(const k of SHARED_KEYS){
+      if(pending.has(k) || !(k in remote)) continue;
+      await store.set(k, remote[k]);
+    }
+    bookState   = (await store.get('bookState'))   || [];
+    budgetVals  = (await store.get('budgetVals'))  || BUDGET.map(b => b[1]);
+    packState   = (await store.get('packState'))   || {};
+    customEvents= (await store.get('customEvents'))|| [];
+    syncOk = true; syncNote = 'all changes synced';
+    await refreshNotes();
+    await refreshActivity();
+    renderCalendar(); renderBookings(); renderBudget(); renderPacking();
+  }catch(e){
+    console.error('could not reach Supabase — showing the local copy:', e);
+    syncOk = false;
+    syncNote = 'offline — showing your local copy';
+  }
+  renderSync();
+}
+
+/* ============ notes: shared, attributed, newest first ============ */
+let notes = [];
+async function refreshNotes(){
+  if(REMOTE_ON){
+    try{
+      notes = await api('trip_notes?select=*&order=created_at.desc&limit=200');
+      await store.set('notesCache', notes);
+    }catch(e){
+      console.error('could not load notes — using cached copy:', e);
+      notes = (await store.get('notesCache')) || [];
+    }
+  } else {
+    notes = (await store.get('notesCache')) || [];
+  }
+  renderNotes();
+}
+function renderNotes(){
+  const root = document.getElementById('noteList');
+  if(!root) return;
+  if(!notes.length){
+    root.innerHTML = '<p class="empty">No notes yet — hut confirmation numbers, restaurant tips, who owes what.</p>';
+    return;
+  }
+  root.innerHTML = notes.map(n => `
+    <article class="note">
+      <div class="note-head">
+        <span class="who-chip">${esc(n.author)}</span>
+        <span class="note-when">${esc(whenText(n.created_at))}${n.pending ? ' · sending…' : ''}</span>
+        ${n.id ? `<button class="linkish note-del" data-id="${esc(n.id)}">delete</button>` : ''}
+      </div>
+      <div class="note-body">${esc(n.body)}</div>
+    </article>`).join('');
+  root.querySelectorAll('.note-del').forEach(b => { b.onclick = () => deleteNote(b.dataset.id); });
+}
+async function addNote(ev){
+  ev.preventDefault();
+  if(!requireMe()) return;
+  const ta = document.getElementById('noteInput');
+  const body = ta.value.trim();
+  if(!body) return;
+  ta.value = '';
+  /* Show it immediately — the round trip shouldn't be in the way of typing. */
+  notes.unshift({ id:null, author: me, body, created_at:new Date().toISOString(), pending:true });
+  await store.set('notesCache', notes);
+  renderNotes();
+  await enqueue({ t:'note', body, by: me });
+  await refreshNotes();          // replaces the optimistic row with the real one
+  await enqueue({ t:'activity', action:'added a note', by: me });
+  await refreshActivity();
+}
+async function deleteNote(id){
+  notes = notes.filter(n => String(n.id) !== String(id));
+  await store.set('notesCache', notes);
+  renderNotes();
+  await enqueue({ t:'noteDel', id });
+  await refreshNotes();
+}
+
+/* ============ activity feed ============ */
+let activity = [];
+async function refreshActivity(){
+  if(REMOTE_ON){
+    try{
+      activity = await api('trip_activity?select=*&order=created_at.desc&limit=100');
+      await store.set('activityCache', activity);
+    }catch(e){
+      console.error('could not load activity — using cached copy:', e);
+      activity = (await store.get('activityCache')) || [];
+    }
+  } else {
+    activity = (await store.get('activityCache')) || [];
+  }
+  renderActivity();
+}
+function renderActivity(){
+  const root = document.getElementById('actList');
+  if(!root) return;
+  if(!activity.length){
+    root.innerHTML = '<li class="empty">Nothing yet. Tick a booking or change a budget figure and it turns up here.</li>';
+    return;
+  }
+  root.innerHTML = activity.map(a => `
+    <li class="act">
+      <span class="who-chip">${esc(a.author)}</span>
+      <span class="act-text">${esc(a.action)}</span>
+      <span class="act-when">${esc(whenText(a.created_at))}</span>
+    </li>`).join('');
 }
 
 /* ============ built-in trip events ============ */
@@ -591,7 +940,12 @@ function showDetail(e){
   document.getElementById('evDetailTitle').textContent=e.title;
   document.getElementById('evDetailBody').innerHTML=`<b>${fmtDate(e.date)}</b>\n\n${(e.notes||'No notes.').replace(/</g,'&lt;')}`;
   const del=document.getElementById('evDeleteBtn');
-  if(!e.builtin){ del.style.display='inline-block'; del.onclick=async()=>{ customEvents.splice(e.idx,1); await store.set('customEvents',customEvents); detailModal.close(); renderCalendar(); }; }
+  if(!e.builtin){ del.style.display='inline-block'; del.onclick=async()=>{
+    if(!requireMe()) return;
+    customEvents.splice(e.idx,1);
+    await saveShared('customEvents', customEvents, `removed "${e.title}" from the calendar`);
+    detailModal.close(); renderCalendar(); refreshActivity();
+  }; }
   else del.style.display='none';
   detailModal.showModal();
 }
@@ -599,9 +953,12 @@ function fmtDate(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateStr
 function openAddEvent(){addModal.showModal();}
 async function saveNewEvent(ev){
   ev.preventDefault();
-  customEvents.push({date:document.getElementById('nevDate').value,title:document.getElementById('nevTitle').value,cat:document.getElementById('nevCat').value,notes:document.getElementById('nevNotes').value,builtin:false});
-  await store.set('customEvents',customEvents);
-  addModal.close(); ev.target.reset(); renderCalendar();
+  if(!requireMe()) return;
+  const title = document.getElementById('nevTitle').value;
+  const date  = document.getElementById('nevDate').value;
+  customEvents.push({date,title,cat:document.getElementById('nevCat').value,notes:document.getElementById('nevNotes').value,builtin:false});
+  await saveShared('customEvents', customEvents, `added "${title}" to ${fmtDate(date)}`);
+  addModal.close(); ev.target.reset(); renderCalendar(); refreshActivity();
 }
 
 /* ============ bookings ============ */
@@ -631,7 +988,12 @@ async function renderBookings(){
     const id='bk'+i;
     const link=b[3]?` <a class="book-link" href="${b[3]}" target="_blank" rel="noopener noreferrer">${b[4]} ↗</a>`:'';
     row.innerHTML=`<input type="checkbox" id="${id}" ${bookState[i]?'checked':''}><div><label class="ct" for="${id}">${b[0]}</label><div class="cd">${b[1]}${link}</div></div><span class="due">${b[2]}</span>`;
-    row.querySelector('input').addEventListener('change',async e=>{bookState[i]=e.target.checked;await store.set('bookState',bookState);renderBookings();});
+    row.querySelector('input').addEventListener('change',async e=>{
+      if(!requireMe()){ e.target.checked = !e.target.checked; return; }   // no anonymous edits
+      bookState[i]=e.target.checked;
+      await saveShared('bookState', bookState, `${e.target.checked?'ticked':'un-ticked'} "${b[0]}"`);
+      renderBookings(); refreshActivity();
+    });
     root.appendChild(row);
   });
   const done=bookState.filter(Boolean).length;
@@ -658,7 +1020,19 @@ function renderBudget(){
   BUDGET.forEach((b,i)=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${b[0]}</td><td><input type="number" min="0" value="${budgetVals[i]}"></td><td style="color:var(--rock-soft);font-size:12.5px">${b[2]}</td>`;
-    tr.querySelector('input').addEventListener('input',async e=>{budgetVals[i]=Number(e.target.value)||0;await store.set('budgetVals',budgetVals);updateTotals();});
+    /* Typing fires per keystroke — settle first, so the feed gets one entry
+       reading "changed X to 420", not one per digit. */
+    let budTimer;
+    tr.querySelector('input').addEventListener('input',async e=>{
+      if(!requireMe()) return;
+      budgetVals[i]=Number(e.target.value)||0;
+      updateTotals();
+      clearTimeout(budTimer);
+      budTimer = setTimeout(async ()=>{
+        await saveShared('budgetVals', budgetVals, `changed "${b[0]}" to €${budgetVals[i]}`);
+        refreshActivity();
+      }, 900);
+    });
     tb.appendChild(tr);
   });
   updateTotals();
@@ -687,29 +1061,34 @@ function renderPacking(){
       const row=document.createElement('div');row.className='pack-item'+(packState[key]?' done':'');
       const id='pk'+key.replace(/\W/g,'');
       row.innerHTML=`<input type="checkbox" id="${id}" ${packState[key]?'checked':''}><label for="${id}">${item}</label>`;
-      row.querySelector('input').addEventListener('change',async e=>{packState[key]=e.target.checked;await store.set('packState',packState);renderPacking();});
+      row.querySelector('input').addEventListener('change',async e=>{
+        if(!requireMe()){ e.target.checked = !e.target.checked; return; }
+        packState[key]=e.target.checked;
+        await saveShared('packState', packState, `${e.target.checked?'packed':'un-packed'} "${item}"`);
+        renderPacking(); refreshActivity();
+      });
       g.appendChild(row);
     });
     const add=document.createElement('div');add.className='add-inline';
     add.innerHTML=`<input placeholder="Add item…" maxlength="60"><button class="btn sm ghost">Add</button>`;
     add.querySelector('button').addEventListener('click',async()=>{
       const v=add.querySelector('input').value.trim();if(!v)return;
+      if(!requireMe()) return;
       packState._extra=packState._extra||{};packState._extra[group]=(packState._extra[group]||[]).concat(v);
-      await store.set('packState',packState);renderPacking();
+      await saveShared('packState', packState, `added "${v}" to ${group}`);
+      renderPacking(); refreshActivity();
     });
     g.appendChild(add);
     root.appendChild(g);
   });
 }
 
-/* ============ notes ============ */
-const notesArea=document.getElementById('notesArea');
-let notesTimer;
-notesArea.addEventListener('input',()=>{clearTimeout(notesTimer);notesTimer=setTimeout(async()=>{await store.set('notes',notesArea.value);},400);});
-
-/* ============ export / import ============ */
+/* ============ export / import ============
+   Still here on purpose: the database is someone else's computer, and a file
+   you hold is the only backup nobody can revoke. Notes now come from the
+   shared list rather than a single textarea. */
 function exportData(){
-  const data={customEvents,bookState,budgetVals,packState,notes:notesArea.value,exported:new Date().toISOString()};
+  const data={customEvents,bookState,budgetVals,packState,notes,activity,exported:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='alps-trip-backup.json';a.click();
 }
@@ -717,21 +1096,46 @@ async function importData(ev){
   const file=ev.target.files[0];if(!file)return;
   try{
     const data=JSON.parse(await file.text());
-    customEvents=data.customEvents||[];bookState=data.bookState||[];budgetVals=data.budgetVals||BUDGET.map(b=>b[1]);packState=data.packState||{};notesArea.value=data.notes||'';
-    await store.set('customEvents',customEvents);await store.set('bookState',bookState);await store.set('budgetVals',budgetVals);await store.set('packState',packState);await store.set('notes',notesArea.value);
-    renderCalendar();renderBookings();renderBudget();renderPacking();
-    document.getElementById('saveHint').textContent='Backup imported ✓';
+    if(!requireMe()) return;
+    customEvents=data.customEvents||[];bookState=data.bookState||[];budgetVals=data.budgetVals||BUDGET.map(b=>b[1]);packState=data.packState||{};
+    /* Push the imported state up so the others get it too, not just this browser. */
+    await saveShared('customEvents',customEvents);
+    await saveShared('bookState',bookState);
+    await saveShared('budgetVals',budgetVals);
+    await saveShared('packState',packState,'imported a backup file');
+    renderCalendar();renderBookings();renderBudget();renderPacking();refreshActivity();
+    document.getElementById('saveHint').textContent='Backup imported ✓ — bookings, budget, packing and calendar restored and shared. Notes were left as they are.';
   }catch(e){console.error('import failed for file', file.name, e);document.getElementById('saveHint').textContent='Import failed — is that the right file?';}
 }
 
 /* ============ init ============ */
 (async function init(){
-  customEvents=(await store.get('customEvents'))||[];
-  bookState=(await store.get('bookState'))||[];
-  budgetVals=(await store.get('budgetVals'))||BUDGET.map(b=>b[1]);
-  packState=(await store.get('packState'))||{};
-  notesArea.value=(await store.get('notes'))||'';
-  renderCalendar();renderBookings();renderBudget();renderPacking();
+  /* 1. Local cache first, so something is on screen instantly and the page
+        is fully usable with no connection at all. */
+  me          = await store.get('who');
+  queue       = (await store.get('outbox')) || [];
+  customEvents= (await store.get('customEvents'))||[];
+  bookState   = (await store.get('bookState'))||[];
+  budgetVals  = (await store.get('budgetVals'))||BUDGET.map(b=>b[1]);
+  packState   = (await store.get('packState'))||{};
+  notes       = (await store.get('notesCache'))||[];
+  activity    = (await store.get('activityCache'))||[];
+  renderIdentity(); renderSync();
+  renderCalendar(); renderBookings(); renderBudget(); renderPacking();
+  renderNotes(); renderActivity();
+
+  /* 2. Then reconcile with everyone else. */
+  await flush();
+  await pullAll();
+
+  if(!me) openWho();
+
+  /* 3. Keep up with the others: on tab focus, when the network returns,
+        and on a slow timer while the tab is open. */
+  window.addEventListener('online',  () => { flush().then(pullAll); });
+  window.addEventListener('offline', () => { syncOk=false; syncNote='offline — showing your local copy'; renderSync(); });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) pullAll(); });
+  setInterval(() => { if(!document.hidden) pullAll(); }, 60000);
 })();
 </script>
 </body>
