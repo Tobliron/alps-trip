@@ -58,6 +58,13 @@ labels their notes and their entries in the activity feed. It is deliberately
 **not a login**: there is no password, nothing is locked, and anyone could pick
 any name. It exists to answer "who wrote this", not to keep anyone out.
 
+Each person can also add a **profile photo** via *add photo* next to their name.
+The picture is cropped square and resized to 128px in the browser before it goes
+anywhere, so a 3 MB phone photo is stored as roughly 9 KB. Until someone adds one
+they get a coloured circle with their initial. Photos live in `trip_state` under
+`avatar:<name>` keys and are fetched once per page load rather than on the
+sync poll, so they don't eat data on the trail.
+
 The `anon` key sits in `index.html` in plain sight. That is what the key is for —
 it only grants what the policies in `supabase-setup.sql` allow. But combined with
 those deliberately open policies it does mean **anyone who finds the URL could

@@ -183,11 +183,15 @@ tfoot td{font-weight:600;background:var(--ice);font-family:var(--font-mono)}
 .sync-pill{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .sync-pill.ok{background:#E2EDE8;color:var(--pine)}
 .sync-pill.warn{background:var(--gold-soft);color:#8A6620}
-.who-line{font-size:12.5px;color:var(--rock-soft);white-space:nowrap}
+.who-line{font-size:12.5px;color:var(--rock-soft);display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
 .who-line b{color:var(--pine)}
 .linkish{background:none;border:none;padding:0;font-size:inherit;color:var(--dusk);text-decoration:underline;cursor:pointer}
 .linkish:hover{color:var(--pine)}
 .who-choices{display:flex;gap:8px;flex-wrap:wrap}
+.who-choice{display:flex;align-items:center;gap:8px}
+.avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;background:var(--ice)}
+.avatar-initial{font-family:var(--font-body);font-weight:600;font-size:12px;letter-spacing:0}
+.avatar-sm{width:24px;height:24px;font-size:11px}
 .who-chip{display:inline-block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:var(--dusk-soft);color:#33566F;padding:2px 8px;border-radius:99px;flex-shrink:0}
 
 /* ---------- notes ---------- */
@@ -288,6 +292,7 @@ footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px
 <div class="status-bar">
   <span class="who-line" id="whoAmI"></span>
   <span class="sync-pill" id="syncPill">connecting…</span>
+  <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="onAvatarChosen(event)">
 </div>
 
 <div class="storage-warn" id="storageWarn" role="alert">
@@ -599,11 +604,26 @@ function whenText(iso){
    A self-declared name, not a login. Nobody is authenticated and nobody is
    locked out — this exists so a note or a tick can say who it came from. */
 let me = null;
+let avatars = {};                       // name -> data: URI, small enough to cache
+
+/* A photo if there is one, otherwise a coloured initial derived from the name
+   so the three of you are still distinguishable at a glance. */
+function avatarHtml(name, extraClass){
+  const cls = 'avatar ' + (extraClass || '');
+  const img = avatars[name];
+  if(img) return `<img class="${cls}" src="${esc(img)}" alt="">`;
+  const letter = String(name || '?').trim().charAt(0).toUpperCase() || '?';
+  let hue = 0;
+  for(const ch of String(name || '')) hue = (hue + ch.charCodeAt(0) * 7) % 360;
+  return `<span class="${cls} avatar-initial" style="background:hsl(${hue} 42% 84%);color:hsl(${hue} 45% 27%)">${esc(letter)}</span>`;
+}
 function renderIdentity(){
   const el = document.getElementById('whoAmI');
   if(!el) return;
   el.innerHTML = me
-    ? `You are <b>${esc(me)}</b> <button class="linkish" onclick="openWho()">change</button>`
+    ? `${avatarHtml(me,'avatar-sm')}<span>You are <b>${esc(me)}</b></span>
+       <button class="linkish" onclick="openWho()">change</button>
+       <button class="linkish" onclick="pickAvatarFile()">${avatars[me] ? 'change photo' : 'add photo'}</button>`
     : `<button class="linkish" onclick="openWho()">Say who you are</button>`;
 }
 function openWho(){
@@ -611,12 +631,80 @@ function openWho(){
   box.innerHTML = '';
   PEOPLE.forEach(p => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'btn ghost'; b.textContent = p;
+    b.type = 'button'; b.className = 'btn ghost who-choice';
+    b.innerHTML = `${avatarHtml(p,'avatar-sm')}<span>${esc(p)}</span>`;
     b.onclick = () => pickWho(p);
     box.appendChild(b);
   });
   document.getElementById('whoOther').value = '';
   document.getElementById('whoModal').showModal();
+}
+
+/* ---- photos ----
+   Resized in the browser to a small square before it goes anywhere, so what
+   gets stored and re-downloaded is a few KB rather than a few MB off a phone
+   camera. Stored as a data: URI in trip_state, which means it caches with
+   everything else and still shows with no signal. */
+function pickAvatarFile(){
+  if(!requireMe()) return;
+  document.getElementById('avatarFile').click();
+}
+function resizeToSquare(file, size){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      if(!side) return reject(new Error('that image has no dimensions'));
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img,
+        (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side,
+        0, 0, size, size);
+      resolve(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('could not read that file as an image')); };
+    img.src = url;
+  });
+}
+async function onAvatarChosen(ev){
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';                       // so re-picking the same file fires again
+  if(!file || !me) return;
+  const hint = document.getElementById('saveHint');
+  try{
+    if(!/^image\//.test(file.type)) throw new Error('that is not an image file');
+    const dataUri = await resizeToSquare(file, 128);
+    avatars[me] = dataUri;
+    await store.set('avatars', avatars);
+    renderIdentity(); renderNotes(); renderActivity();
+    await enqueue({ t:'state', key:'avatar:' + me, value:{ img:dataUri }, by: me });
+    await enqueue({ t:'activity', action:'set a profile photo', by: me });
+    await refreshActivity();
+  }catch(e){
+    console.error('avatar upload failed for', file && file.name, e);
+    if(hint) hint.textContent = 'Could not use that photo — try a JPG or PNG.';
+  }
+}
+async function loadAvatars(){
+  avatars = (await store.get('avatars')) || {};
+  if(!REMOTE_ON) return;
+  try{
+    const rows = await api('trip_state?select=key,value&key=like.avatar:*');
+    const next = {};
+    rows.forEach(r => {
+      const who = r.key.slice('avatar:'.length);
+      if(who && r.value && r.value.img) next[who] = r.value.img;
+    });
+    /* Keep anything of ours still waiting in the outbox. */
+    for(const [k,v] of Object.entries(avatars)) if(!(k in next) && queue.some(q => q.key === 'avatar:' + k)) next[k] = v;
+    avatars = next;
+    await store.set('avatars', avatars);
+  }catch(e){
+    console.error('could not load profile photos — using cached copies:', e);
+  }
 }
 async function pickWho(name){
   const clean = String(name || '').trim().slice(0, 40);
@@ -731,7 +819,10 @@ async function saveShared(key, value, activityText){
 async function pullAll(){
   if(!REMOTE_ON) { renderSync(); return; }
   try{
-    const rows = await api('trip_state?select=key,value');
+    /* Only the collaborative keys. Avatars also live in trip_state but are
+       far larger and change almost never — pulling them on every poll would
+       burn mountain data for nothing, so loadAvatars() handles them. */
+    const rows = await api('trip_state?select=key,value&key=in.(' + SHARED_KEYS.join(',') + ')');
     const remote = {};
     rows.forEach(r => { remote[r.key] = r.value; });
     /* Don't clobber edits still sitting in the outbox — those are newer. */
@@ -782,6 +873,7 @@ function renderNotes(){
   root.innerHTML = notes.map(n => `
     <article class="note">
       <div class="note-head">
+        ${avatarHtml(n.author,'avatar-sm')}
         <span class="who-chip">${esc(n.author)}</span>
         <span class="note-when">${esc(whenText(n.created_at))}${n.pending ? ' · sending…' : ''}</span>
         ${n.id ? `<button class="linkish note-del" data-id="${esc(n.id)}">delete</button>` : ''}
@@ -839,6 +931,7 @@ function renderActivity(){
   }
   root.innerHTML = activity.map(a => `
     <li class="act">
+      ${avatarHtml(a.author,'avatar-sm')}
       <span class="who-chip">${esc(a.author)}</span>
       <span class="act-text">${esc(a.action)}</span>
       <span class="act-when">${esc(whenText(a.created_at))}</span>
@@ -1120,13 +1213,17 @@ async function importData(ev){
   packState   = (await store.get('packState'))||{};
   notes       = (await store.get('notesCache'))||[];
   activity    = (await store.get('activityCache'))||[];
+  avatars     = (await store.get('avatars'))||{};
   renderIdentity(); renderSync();
   renderCalendar(); renderBookings(); renderBudget(); renderPacking();
   renderNotes(); renderActivity();
 
-  /* 2. Then reconcile with everyone else. */
+  /* 2. Then reconcile with everyone else. Photos are fetched once per load,
+        not on the polling loop — they're the big payload and rarely change. */
   await flush();
+  await loadAvatars();
   await pullAll();
+  renderIdentity(); renderNotes(); renderActivity();
 
   if(!me) openWho();
 
