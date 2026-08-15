@@ -90,7 +90,7 @@ The three names in the picker live in one place near the top of the `<script>`
 block in `index.html`:
 
 ```js
-const PEOPLE = ['Liron', 'Friend 2', 'Friend 3'];
+const PEOPLE = ['Liron', 'Sagi', 'Buza'];
 ```
 
 Edit that line to the real names. Anyone can also type their own name instead.
