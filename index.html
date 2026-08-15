@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyprus &amp; the Dolomites 2026 · Trip HQ</title>
+<meta name="description" content="Itinerary, bookings, budget and packing for 24 days across Cyprus and the Dolomites, 17 Sep – 10 Oct 2026.">
+<!-- Link preview when the site is shared in chat. Once the site is live, swap the
+     two URLs below for absolute ones (https://<user>.github.io/<repo>/…) — some
+     chat apps won't resolve a relative og:image. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cyprus &amp; the Dolomites 2026 · Trip HQ">
+<meta property="og:description" content="24 days, 3 friends, 3 hut nights. Itinerary, bookings, budget and packing in one page.">
+<meta property="og:image" content="images/lagazuoi.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rock:#38342F;        /* dolomite shadow */
+  --rock-soft:#6B655D;
+  --pine:#2F5D50;        /* alpine pine */
+  --pine-deep:#22443B;
+  --glow:#C94F6D;        /* enrosadira alpenglow */
+  --glow-soft:#F3DDE3;
+  --ice:#EEF1EF;         /* pale limestone */
+  --paper:#FBFCFB;
+  --dusk:#5B7C99;        /* dusk blue */
+  --dusk-soft:#DEE7EE;
+  --gold:#B98A2E;        /* larch in autumn */
+  --gold-soft:#F4EAD3;
+  --line:#DCE1DD;
+  --radius:14px;
+  --font-display:"Fraunces", Georgia, serif;
+  --font-body:"Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{font-family:var(--font-body);background:var(--paper);color:var(--rock);line-height:1.55;font-size:15px}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit;font-size:14px;color:var(--rock)}
+
+/* ---------- header ---------- */
+header{background:var(--pine-deep);color:var(--ice);padding:28px 24px 0;position:relative;overflow:hidden}
+.head-inner{max-width:1060px;margin:0 auto}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#9FC0B5;margin-bottom:6px}
+h1{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,4.5vw,44px);letter-spacing:-.01em;line-height:1.1}
+h1 em{font-style:italic;color:var(--glow-soft)}
+.head-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-family:var(--font-mono);font-size:12px;color:#BFD4CC}
+.ridge-wrap{max-width:1060px;margin:8px auto 0}
+.ridge-svg{display:block;width:100%;height:auto}
+.ridge-label{font-family:var(--font-mono);font-size:10px;fill:#CFE0D9}
+.ridge-alt{font-family:var(--font-mono);font-size:9px;fill:#8FB3A7}
+.ridge-node{cursor:pointer}
+.ridge-node:hover circle{fill:var(--glow)}
+.ridge-node:focus-visible circle{stroke:#fff;stroke-width:2}
+
+/* ---------- nav tabs ---------- */
+nav{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:1px solid var(--line)}
+.tabs{max-width:1060px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:0 16px}
+.tab{background:none;border:none;border-bottom:3px solid transparent;padding:13px 14px 11px;font-size:14px;font-weight:500;color:var(--rock-soft);white-space:nowrap}
+.tab:hover{color:var(--rock)}
+.tab.active{color:var(--pine);border-bottom-color:var(--glow)}
+.tab:focus-visible{outline:2px solid var(--dusk);outline-offset:-2px}
+
+main{max-width:1060px;margin:0 auto;padding:26px 16px 80px}
+section{display:none}
+section.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2{font-family:var(--font-display);font-weight:600;font-size:26px;margin-bottom:4px}
+.sub{color:var(--rock-soft);margin-bottom:20px;max-width:640px}
+
+/* ---------- phase cards ---------- */
+.phase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.phase{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;position:relative;overflow:hidden}
+/* full-bleed photo at the top of each phase card; negative margins cancel the card padding */
+.phase-photo{display:block;width:calc(100% + 36px);height:158px;object-fit:cover;margin:-18px -18px 14px;background:var(--ice)}
+.phase .tag{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:99px;margin-bottom:8px}
+.phase h3{font-family:var(--font-display);font-size:19px;font-weight:600;margin-bottom:2px}
+.phase .dates{font-family:var(--font-mono);font-size:11px;color:var(--rock-soft);margin-bottom:8px}
+.phase p{font-size:13.5px;color:var(--rock-soft)}
+.phase ul{margin:8px 0 0 16px;font-size:13.5px}
+.phase li{margin-bottom:3px}
+.t-cy{background:var(--dusk-soft);color:var(--dusk)}
+.t-al{background:#E2EDE8;color:var(--pine)}
+.t-hut{background:var(--glow-soft);color:var(--glow)}
+.t-ga{background:var(--gold-soft);color:var(--gold)}
+.link-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.link-row a{display:block;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--rock)}
+.link-row a:hover{border-color:#BBD2C8;background:var(--ice)}
+.link-row a:focus-visible{outline:2px solid var(--dusk);outline-offset:2px}
+.link-row b{display:block;font-size:13.5px;color:var(--pine);margin-bottom:2px}
+.link-row span{font-size:12.5px;color:var(--rock-soft)}
+.alert{background:var(--glow-soft);border:1px solid #E8B9C6;border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;font-size:14px}
+.alert strong{color:var(--glow)}
+
+/* ---------- calendar ---------- */
+.cal-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--rock-soft);margin-left:auto}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.d-flight{background:var(--dusk)} .d-hike{background:var(--pine)} .d-plan{background:var(--gold)} .d-holiday{background:var(--glow)} .d-custom{background:var(--rock)}
+.month{margin-bottom:28px}
+.month h3{font-family:var(--font-display);font-size:20px;margin-bottom:10px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--rock-soft);text-align:center;padding:4px 0}
+.day{background:#fff;border:1px solid var(--line);border-radius:8px;min-height:86px;padding:5px 6px;font-size:11.5px;position:relative}
+.day.out{background:transparent;border-color:transparent}
+.day.trip{border-color:#C8D6CF}
+.day .num{font-family:var(--font-mono);font-size:11px;color:var(--rock-soft)}
+.day.today .num{background:var(--pine);color:#fff;border-radius:5px;padding:0 4px}
+.ev{border-radius:5px;padding:2px 5px;margin-top:3px;line-height:1.25;cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ev:hover{filter:brightness(.96)}
+.ev.Flight{background:var(--dusk-soft);color:#33566F}
+.ev.Hike{background:#E2EDE8;color:var(--pine-deep)}
+.ev.Plan{background:var(--gold-soft);color:#8A6620}
+.ev.Holiday{background:var(--glow-soft);color:#A03A55}
+.ev.Custom{background:var(--ice);color:var(--rock);border:1px dashed var(--rock-soft)}
+.btn{background:var(--pine);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-size:13.5px;font-weight:500}
+.btn:hover{background:var(--pine-deep)}
+.btn.ghost{background:#fff;color:var(--pine);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--ice)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btn:focus-visible{outline:2px solid var(--dusk);outline-offset:2px}
+
+/* modal */
+dialog{border:none;border-radius:var(--radius);padding:0;max-width:440px;width:92vw;box-shadow:0 24px 60px rgba(30,40,35,.25)}
+dialog::backdrop{background:rgba(34,68,59,.45)}
+.modal-in{padding:22px}
+.modal-in h3{font-family:var(--font-display);font-size:20px;margin-bottom:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--rock-soft);margin-bottom:4px}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+.field textarea{min-height:70px;resize:vertical}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+#evDetailBody{font-size:14px;white-space:pre-wrap;color:var(--rock-soft)}
+#evDetailBody b{color:var(--rock)}
+
+/* ---------- checklist ---------- */
+.check-list{display:flex;flex-direction:column;gap:8px}
+.check{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.check input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--pine);flex-shrink:0}
+.check.done .ct{text-decoration:line-through;color:var(--rock-soft)}
+.check .ct{font-weight:500;display:block;cursor:pointer}
+.check .cd{font-size:12.5px;color:var(--rock-soft)}
+.book-link{color:var(--pine);text-decoration:none;border-bottom:1px solid #BBD2C8;white-space:nowrap}
+.book-link:hover{color:var(--pine-deep);border-bottom-color:var(--pine)}
+.check.done .book-link{color:var(--rock-soft);border-bottom-color:var(--line)}
+.check .due{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--glow);white-space:nowrap;flex-shrink:0}
+.progress{height:8px;background:var(--ice);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--pine),var(--glow));border-radius:99px;transition:width .3s}
+
+/* ---------- budget ---------- */
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
+th{background:var(--ice);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--rock-soft)}
+td input{width:90px;border:1px solid transparent;border-radius:6px;padding:4px 6px;background:transparent;font-family:var(--font-mono)}
+td input:hover,td input:focus{border-color:var(--line);background:#fff;outline:none}
+tfoot td{font-weight:600;background:var(--ice);font-family:var(--font-mono)}
+.per-person{margin-top:12px;font-family:var(--font-display);font-size:20px}
+.per-person b{color:var(--pine)}
+
+/* ---------- packing ---------- */
+.pack-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.pack-group{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.pack-group h3{font-family:var(--font-display);font-size:17px;margin-bottom:10px}
+.pack-item{display:flex;gap:9px;align-items:center;padding:4px 0;font-size:13.5px}
+.pack-item input{accent-color:var(--pine);width:16px;height:16px}
+.pack-item.done label{text-decoration:line-through;color:var(--rock-soft)}
+.add-inline{display:flex;gap:6px;margin-top:10px}
+.add-inline input{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+
+/* ---------- notes ---------- */
+#notesArea{width:100%;min-height:280px;border:1px solid var(--line);border-radius:var(--radius);padding:16px;font-size:14px;line-height:1.7;resize:vertical;background:#fff}
+.save-hint{font-size:12px;color:var(--rock-soft);margin-top:8px;font-family:var(--font-mono)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.storage-warn{display:none;background:#FDF3D8;border:1px solid #E3C878;border-radius:var(--radius);padding:13px 16px;margin-bottom:18px;font-size:13.5px;color:#6B5416}
+.storage-warn strong{display:block;margin-bottom:2px;color:#8A6620}
+footer{text-align:center;padding:26px 16px;color:var(--rock-soft);font-size:12px;font-family:var(--font-mono);border-top:1px solid var(--line)}
+.credits{max-width:760px;margin:10px auto 0;font-family:var(--font-body);font-size:11px;line-height:1.7;color:#8C867D}
+.credits a{color:#8C867D}
+@media(max-width:640px){.day{min-height:64px;font-size:10px}.ev{-webkit-line-clamp:1}.legend{margin-left:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <div class="eyebrow">17 Sep — 10 Oct 2026 · 24 days · 3 friends</div>
+    <h1>Cyprus &amp; the Dolomites <em>Trip HQ</em></h1>
+    <div class="head-meta">
+      <span>TLV → LCA → VCE → TLV</span>
+      <span>2 bases + 3 hut nights</span>
+      <span>peak: Rif. Lagazuoi 2,752 m</span>
+    </div>
+  </div>
+  <div class="ridge-wrap">
+    <!-- Signature: the trip drawn as its real elevation profile -->
+    <svg class="ridge-svg" viewBox="0 0 1060 190" role="img" aria-label="Trip elevation profile: Cyprus sea level, Cortina 1224m, huts 2752m, Val Gardena 1236m, Lake Garda 65m, Venice sea level">
+      <defs>
+        <linearGradient id="gGlow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#C94F6D" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#2F5D50" stop-opacity=".15"/>
+        </linearGradient>
+      </defs>
+      <!-- profile: x spread over 24 days; y = altitude -->
+      <path d="M0,168 L60,166 L150,164 L210,166 L262,150 L300,120 L340,124 L378,118 L420,74 L458,60 L492,38 L520,96 L560,110 L596,104 L632,112 L668,108 L706,116 L740,152 L800,158 L860,156 L920,160 L980,166 L1060,168 L1060,190 L0,190 Z" fill="url(#gGlow)"/>
+      <path d="M0,168 L60,166 L150,164 L210,166 L262,150 L300,120 L340,124 L378,118 L420,74 L458,60 L492,38 L520,96 L560,110 L596,104 L632,112 L668,108 L706,116 L740,152 L800,158 L860,156 L920,160 L980,166 L1060,168" fill="none" stroke="#EEF1EF" stroke-width="2"/>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('cy')" onkeydown="if(event.key==='Enter')jumpPhase('cy')">
+        <circle cx="105" cy="165" r="5" fill="#5B7C99"/>
+        <text class="ridge-label" x="105" y="150" text-anchor="middle">Cyprus</text>
+        <text class="ridge-alt" x="105" y="182" text-anchor="middle">0 m · 17–21/9</text>
+      </g>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('co')" onkeydown="if(event.key==='Enter')jumpPhase('co')">
+        <circle cx="340" cy="124" r="5" fill="#8FB3A7"/>
+        <text class="ridge-label" x="340" y="109" text-anchor="middle">Cortina</text>
+        <text class="ridge-alt" x="340" y="141" text-anchor="middle">1,224 m · 22–25/9</text>
+      </g>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('hut')" onkeydown="if(event.key==='Enter')jumpPhase('hut')">
+        <circle cx="492" cy="38" r="6" fill="#C94F6D"/>
+        <text class="ridge-label" x="492" y="23" text-anchor="middle">Hut trek · Lagazuoi</text>
+        <text class="ridge-alt" x="492" y="55" text-anchor="middle">2,752 m · 26–29/9</text>
+      </g>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('vg')" onkeydown="if(event.key==='Enter')jumpPhase('vg')">
+        <circle cx="632" cy="112" r="5" fill="#8FB3A7"/>
+        <text class="ridge-label" x="632" y="97" text-anchor="middle">Val Gardena</text>
+        <text class="ridge-alt" x="632" y="129" text-anchor="middle">1,236 m · 29/9–4/10</text>
+      </g>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('ga')" onkeydown="if(event.key==='Enter')jumpPhase('ga')">
+        <circle cx="800" cy="158" r="5" fill="#B98A2E"/>
+        <text class="ridge-label" x="800" y="143" text-anchor="middle">Lake Garda</text>
+        <text class="ridge-alt" x="800" y="175" text-anchor="middle">65 m · 5–9/10</text>
+      </g>
+      <g class="ridge-node" tabindex="0" onclick="jumpPhase('ve')" onkeydown="if(event.key==='Enter')jumpPhase('ve')">
+        <circle cx="1000" cy="166" r="5" fill="#5B7C99"/>
+        <text class="ridge-label" x="1000" y="151" text-anchor="middle">Venice</text>
+        <text class="ridge-alt" x="1000" y="183" text-anchor="middle">9–10/10</text>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<nav>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="overview" role="tab">Overview</button>
+    <button class="tab" data-tab="calendar" role="tab">Calendar</button>
+    <button class="tab" data-tab="bookings" role="tab">Bookings</button>
+    <button class="tab" data-tab="budget" role="tab">Budget</button>
+    <button class="tab" data-tab="packing" role="tab">Packing</button>
+    <button class="tab" data-tab="notes" role="tab">Notes</button>
+  </div>
+</nav>
+
+<main>
+
+<div class="storage-warn" id="storageWarn" role="alert">
+  <strong>Heads up — this browser isn't saving your changes.</strong>
+  Private/incognito windows and blocked site data stop the page from storing anything, so edits will disappear
+  when you close the tab. Use <b>Export trip data</b> on the Notes tab before you leave, or open the site in a normal window.
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<section id="overview" class="active">
+  <div class="alert"><strong>Do first:</strong> book the three rifugio nights (Lagazuoi → Fanes/Lavarella → Sennes) this week — late September is the final stretch of the hut season and beds go fast. Everything else can wait a few days.</div>
+  <h2>The plan, phase by phase</h2>
+  <p class="sub">Click a peak on the elevation profile above, or scroll. Holidays are built in: Yom Kippur falls on the last Cyprus day, Sukkot starts the night before the hut trek, Simchat Torah lands on the Ortisei rest day.</p>
+  <div class="phase-grid">
+    <div class="phase" id="ph-cy">
+      <img class="phase-photo" src="images/akamas-cyprus.jpg" width="1200" height="800" loading="lazy" decoding="async" alt="Rocky coastline and turquoise sea at the Akamas peninsula, Cyprus">
+      <span class="tag t-cy">Phase 0 · Solo</span>
+      <h3>Cyprus warm-up</h3>
+      <div class="dates">Thu 17 → Mon 21 Sep · fly LCA→VCE Tue 22</div>
+      <p>Your weekend before the crew assembles.</p>
+      <ul>
+        <li>Troodos Mountains hike (training day)</li>
+        <li>Akamas / Blue Lagoon or Cape Greco</li>
+        <li>Erev Yom Kippur Sun 20/9 · fast ends Mon night</li>
+      </ul>
+    </div>
+    <div class="phase" id="ph-co">
+      <img class="phase-photo" src="images/tre-cime.jpg" width="1200" height="687" loading="lazy" decoding="async" alt="The three peaks of Tre Cime di Lavaredo against a clear sky">
+      <span class="tag t-al">Phase 1 · All three</span>
+      <h3>Cortina d'Ampezzo</h3>
+      <div class="dates">Tue 22 → Fri 25 Sep · 3 nights</div>
+      <p>Meet at Venice airport, drive up, straight into the icons.</p>
+      <ul>
+        <li>Tre Cime di Lavaredo loop (leave 6:30!)</li>
+        <li>Lago di Sorapis turquoise lake</li>
+        <li>Cinque Torri light day + pack hut bags</li>
+      </ul>
+    </div>
+    <div class="phase" id="ph-hut">
+      <img class="phase-photo" src="images/lagazuoi.jpg" width="1200" height="866" loading="lazy" decoding="async" alt="The ridge and cable car station at Lagazuoi, 2,752 m in the Dolomites">
+      <span class="tag t-hut">Phase 2 · The centerpiece</span>
+      <h3>Hut-to-hut on Alta Via 1</h3>
+      <div class="dates">Sat 26 → Tue 29 Sep · 3 hut nights</div>
+      <p>Lago di Braies → Fanes plateau → sleep at 2,752 m.</p>
+      <ul>
+        <li>N1: Rifugio Sennes or Biella</li>
+        <li>N2: Rifugio Fanes / Lavarella (brewery!)</li>
+        <li>N3: Rifugio Lagazuoi — sunrise of the trip</li>
+      </ul>
+    </div>
+    <div class="phase" id="ph-vg">
+      <img class="phase-photo" src="images/val-gardena.jpg" width="1200" height="800" loading="lazy" decoding="async" alt="Green alpine meadows and peaks above Val Gardena">
+      <span class="tag t-al">Phase 3</span>
+      <h3>Val Gardena (Ortisei)</h3>
+      <div class="dates">Tue 29 Sep → Sun 4 Oct · 5-6 nights</div>
+      <p>Second base. Laundry, sauna, big-view day hikes.</p>
+      <ul>
+        <li>Seceda ridgeline (check lift dates)</li>
+        <li>Alpe di Siusi meadows · Sassolungo circuit</li>
+        <li>Simchat Torah rest day Sat 3/10</li>
+      </ul>
+    </div>
+    <div class="phase" id="ph-ga">
+      <img class="phase-photo" src="images/lake-garda.jpg" width="1200" height="675" loading="lazy" decoding="async" alt="Lake Garda seen from the Rocca di Manerba, with the Isola dei Conigli below">
+      <span class="tag t-ga">Phase 4 · Wind-down</span>
+      <h3>Val di Funes → Lake Garda</h3>
+      <div class="dates">Sun 4 → Fri 9 Oct</div>
+      <p>October-proof: lower, warmer, still gorgeous.</p>
+      <ul>
+        <li>Adolf Munkel trail + Santa Maddalena</li>
+        <li>Bolzano &amp; Ötzi museum en route south</li>
+        <li>Ponale trail, Monte Baldo, wine, lake</li>
+      </ul>
+    </div>
+    <div class="phase" id="ph-ve">
+      <img class="phase-photo" src="images/venice.jpg" width="1200" height="671" loading="lazy" decoding="async" alt="Aerial view of Venice and the Grand Canal">
+      <span class="tag t-cy">Finale</span>
+      <h3>Venice send-off</h3>
+      <div class="dates">Fri 9 → Sat 10 Oct</div>
+      <p>Drive down, golden-hour wander, final dinner, fly home.</p>
+      <ul>
+        <li>Sleep near airport (Mestre is cheaper)</li>
+        <li>Return rental car at VCE</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 style="margin-top:30px">Handy links</h2>
+  <p class="sub">The sites worth having open while you plan. Booking links live on the Bookings tab, next to the thing they book.</p>
+  <div class="link-row">
+    <a href="https://www.dolomiti.org/en/" target="_blank" rel="noopener noreferrer"><b>Dolomiti.org</b><span>Trails, huts and area guides for the whole range</span></a>
+    <a href="https://www.suedtirol.info/en/" target="_blank" rel="noopener noreferrer"><b>South Tyrol official travel</b><span>Lift dates, road closures, seasonal opening info</span></a>
+    <a href="https://www.rifugiofanes.com/" target="_blank" rel="noopener noreferrer"><b>Rifugio Fanes</b><span>The alternative to Lavarella for hut night 2</span></a>
+    <a href="https://www.iceman.it/en/" target="_blank" rel="noopener noreferrer"><b>Ötzi Museum, Bolzano</b><span>Book ahead for the 5/10 stop en route to Garda</span></a>
+  </div>
+</section>
+
+<!-- ============ CALENDAR ============ -->
+<section id="calendar">
+  <h2>Calendar</h2>
+  <p class="sub">Everything in one view — tap any event for its notes. Add your own events (booked flight times, dinners, anything) with the button; they're marked with a dashed border.</p>
+  <div class="cal-controls">
+    <button class="btn" onclick="openAddEvent()">+ Add event</button>
+    <div class="legend">
+      <span><i class="dot d-flight"></i>Flights</span>
+      <span><i class="dot d-hike"></i>Hikes</span>
+      <span><i class="dot d-plan"></i>Plans</span>
+      <span><i class="dot d-holiday"></i>Hebrew holidays</span>
+      <span><i class="dot d-custom"></i>Yours</span>
+    </div>
+  </div>
+  <div id="calRoot"></div>
+</section>
+
+<!-- ============ BOOKINGS ============ -->
+<section id="bookings">
+  <h2>Booking checklist</h2>
+  <p class="sub">Roughly in order of urgency. Progress saves automatically.</p>
+  <div class="progress"><i id="bookBar" style="width:0%"></i></div>
+  <div class="check-list" id="bookList"></div>
+</section>
+
+<!-- ============ BUDGET ============ -->
+<section id="budget">
+  <h2>Budget estimate</h2>
+  <p class="sub">Per person, EUR. Edit any number — totals update and save. Target band: €1,500–3,000 pp.</p>
+  <table id="budgetTable">
+    <thead><tr><th>Item</th><th>Est. € / person</th><th>Notes</th></tr></thead>
+    <tbody></tbody>
+    <tfoot><tr><td>Total per person</td><td id="budTotal">—</td><td></td></tr></tfoot>
+  </table>
+  <div class="per-person">Trip total for 3 people: <b id="budGroup">—</b></div>
+</section>
+
+<!-- ============ PACKING ============ -->
+<section id="packing">
+  <h2>Packing</h2>
+  <p class="sub">Hut essentials matter most — rifugios require a sleeping bag liner and many are cash-only.</p>
+  <div class="pack-cols" id="packRoot"></div>
+</section>
+
+<!-- ============ NOTES ============ -->
+<section id="notes">
+  <h2>Notes</h2>
+  <p class="sub">Scratchpad for the group — hut confirmation numbers, restaurant tips, who owes what.</p>
+  <textarea id="notesArea" placeholder="Type anything… it saves as you go."></textarea>
+  <div class="toolbar" style="margin-top:14px">
+    <button class="btn ghost" onclick="exportData()">⬇ Export trip data (JSON backup)</button>
+    <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆ Import backup</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="save-hint" id="saveHint">Changes save automatically in this app. Use Export for a portable backup to share with the group.</div>
+</section>
+
+</main>
+
+<footer>
+  <div>Cyprus &amp; Dolomites · 17 Sep – 10 Oct 2026 · built for three friends and one very good idea</div>
+  <div class="credits">
+    Photos from Wikimedia Commons, reused under their Creative Commons licences:
+    <a href="https://commons.wikimedia.org/wiki/File:View_from_Moutti_Tis_Sotiras,_Akamas_Paninsula,_Cyprus.jpg">Akamas</a> © Michal Klajban (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>) ·
+    <a href="https://commons.wikimedia.org/wiki/File:2019_Tre_Cime.jpg">Tre Cime</a> © Tiia Monto (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>) ·
+    <a href="https://commons.wikimedia.org/wiki/File:Lagazuoi_cable_car_2.jpg">Lagazuoi</a> © kallerna (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>) ·
+    <a href="https://commons.wikimedia.org/wiki/File:Val_Gardena.jpg">Val Gardena</a> © Dmitry A. Mottl (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>) ·
+    <a href="https://commons.wikimedia.org/wiki/File:La_Rocca_di_Manerba_del_Garda_con_l%27isola_dei_Conigli.jpg">Lake Garda</a> © Guido Adler (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>) ·
+    <a href="https://commons.wikimedia.org/wiki/File:Venezia_aerial_view.jpg">Venice</a> © kallerna (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>)
+  </div>
+</footer>
+
+<!-- add event modal -->
+<dialog id="addModal">
+  <form class="modal-in" method="dialog" onsubmit="saveNewEvent(event)">
+    <h3>Add event</h3>
+    <div class="field"><label for="nevTitle">Title</label><input id="nevTitle" required maxlength="80" placeholder="e.g. Flight LCA→VCE 09:40 Aegean"></div>
+    <div class="field"><label for="nevDate">Date</label><input id="nevDate" type="date" required min="2026-09-01" max="2026-10-31" value="2026-09-17"></div>
+    <div class="field"><label for="nevCat">Type</label>
+      <select id="nevCat"><option>Custom</option><option>Flight</option><option>Hike</option><option>Plan</option></select>
+    </div>
+    <div class="field"><label for="nevNotes">Notes (optional)</label><textarea id="nevNotes" maxlength="500"></textarea></div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" onclick="addModal.close()">Cancel</button>
+      <button type="submit" class="btn">Add to calendar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- event detail modal -->
+<dialog id="detailModal">
+  <div class="modal-in">
+    <h3 id="evDetailTitle"></h3>
+    <div id="evDetailBody"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn ghost" id="evDeleteBtn" style="display:none">Delete</button>
+      <button class="btn" onclick="detailModal.close()">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ============ storage: localStorage, with in-memory fallback ============
+   Keyed under a namespace so it can't collide with anything else on the host.
+   Both methods stay async so every existing `await store.get/set` still works.
+   If localStorage is unavailable (private window, blocked cookies, full disk)
+   we keep working from memory for the session AND tell the user once — silent
+   data loss is the thing this page must never do again. */
+const NS = 'alpsTrip:';
+const mem = {};
+let storageBroken = false;
+function warnStorageBroken(){
+  if(storageBroken) return;
+  storageBroken = true;
+  const b = document.getElementById('storageWarn');
+  if(b) b.style.display = 'block';
+}
+const store = {
+  async get(k){
+    try{
+      const raw = localStorage.getItem(NS + k);
+      if(raw !== null) return JSON.parse(raw);
+    }catch(e){
+      console.error('storage.get failed for', k, '— falling back to memory:', e);
+      warnStorageBroken();
+    }
+    return mem[k] ?? null;
+  },
+  async set(k,v){
+    mem[k] = v;                       // mirror in memory so reads stay consistent
+    try{
+      localStorage.setItem(NS + k, JSON.stringify(v));
+      markSaved();
+    }catch(e){
+      console.error('storage.set failed for', k, '— falling back to memory:', e);
+      warnStorageBroken();
+    }
+  }
+};
+function markSaved(){
+  const h = document.getElementById('saveHint');
+  if(!h || storageBroken) return;
+  const t = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  h.textContent = `Saved in this browser at ${t}. Export a JSON backup to share with the group or move devices.`;
+}
+
+/* ============ built-in trip events ============ */
+const EVENTS = [
+ // date, title, cat, notes
+ ["2026-09-17","✈️ TLV → Larnaca","Flight","BOOK — add airline + time.\nArrive Cyprus, settle in (Limassol or Paphos base). Seafront dinner."],
+ ["2026-09-18","Troodos Mountains hike","Hike","Warm-up training day: Artemis/Atalanti trail on Mt Olympus, Kykkos Monastery, Omodos wine village."],
+ ["2026-09-19","Coast day: Akamas / Cape Greco","Plan","Blue Lagoon, sea caves, swim. Relaxed Shabbat pace."],
+ ["2026-09-20","Relaxed day · Erev Yom Kippur","Holiday","Morning swim, big early meal. Fast begins at sunset."],
+ ["2026-09-21","Yom Kippur — rest day","Holiday","Quiet day in Cyprus. Fast ends at nightfall. Pack for tomorrow's flight."],
+ ["2026-09-22","✈️ LCA→VCE (me) + TLV→VCE (friends) → Cortina","Flight","BOOK — coordinate arrival times!\nMeet at Venice Marco Polo, pick up rental car, drive ~2h to Cortina. Grocery + gear check."],
+ ["2026-09-23","Tre Cime di Lavaredo loop","Hike","Leave Cortina 6:30 — toll-road parking fills by 8. ~10km loop, lunch at Rif. Locatelli."],
+ ["2026-09-24","Lago di Sorapis","Hike","~12km from Passo Tre Croci, trail 215. Cabled ledges — steady feet, poles for descent."],
+ ["2026-09-25","Cinque Torri + pack hut bags · Erev Sukkot","Hike","Light day at the WWI open-air museum. Evening: hut bags only, big luggage stays at hotel/car. Sukkot begins at sunset."],
+ ["2026-09-26","Hut day 1: Braies → Rif. Sennes/Biella","Hike","Reserve Braies parking online or taxi in. ~6h, +900m. Sukkot I."],
+ ["2026-09-27","Hut day 2: → Rif. Fanes/Lavarella","Hike","~5-6h across the Fanes karst plateau. Lavarella has its own tiny brewery."],
+ ["2026-09-28","Hut day 3: → Rif. Lagazuoi (2,752m)","Hike","~6-7h via Forcella del Lago. Sunset + sunrise at the top = trip highlight."],
+ ["2026-09-29","Descend → drive to Ortisei","Plan","Cable car or WWI tunnel route down to Falzarego. Car → Passo Gardena → Ortisei (~1.5h). Check in 5-6 nights. Laundry. Pizza."],
+ ["2026-09-30","Seceda ridgeline","Hike","Lift from Ortisei — CONFIRM autumn closing date. Ridge walk, descend Val d'Anna."],
+ ["2026-10-01","Alpe di Siusi meadows","Plan","Europe's biggest alpine meadow, gentle day, coffee at a malga."],
+ ["2026-10-02","Sassolungo circuit · Erev Simchat Torah","Hike","~17km loop from Passo Sella (or shorter Città dei Sassi option). Holiday begins at sunset."],
+ ["2026-10-03","Rest day: Vallunga stroll · Simchat Torah","Holiday","Flat valley walk, sauna, gelato, Ortisei pedestrian street."],
+ ["2026-10-04","Val di Funes: Adolf Munkel trail","Hike","~9km under the Odle spires + the Santa Maddalena postcard view. Geisleralm lunch if open."],
+ ["2026-10-05","Bolzano → Lake Garda","Plan","Ötzi museum + old town, then drive ~2h to Riva del Garda. Check in 4 nights."],
+ ["2026-10-06","Ponale trail above the lake","Hike","Carved into the cliffs — easy, spectacular. Swim after."],
+ ["2026-10-07","Malcesine + Monte Baldo","Hike","Ferry or drive, rotating cable car up, ridge walk with lake views."],
+ ["2026-10-08","Garda flex day 🍷","Plan","Limone, kayak, Bardolino wine tasting, or pure lakefront laziness. Celebration dinner."],
+ ["2026-10-09","Drive to Venice + evening in the city","Plan","~2h. Bags at Mestre hotel, vaporetto in, golden-hour wander, last dinner."],
+ ["2026-10-10","✈️ Venice → TLV","Flight","BOOK — add time. Return rental car at VCE first."]
+];
+
+let customEvents = [];
+
+/* ============ tabs ============ */
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('active');
+}));
+function jumpPhase(id){
+  tabs.forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.querySelector('[data-tab=overview]').classList.add('active');
+  document.getElementById('overview').classList.add('active');
+  const el = document.getElementById('ph-'+id);
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.boxShadow='0 0 0 3px var(--glow)'; setTimeout(()=>el.style.boxShadow='',1400); }
+}
+
+/* ============ calendar render ============ */
+const addModal = document.getElementById('addModal');
+const detailModal = document.getElementById('detailModal');
+
+function allEvents(){
+  const list = EVENTS.map(e=>({date:e[0],title:e[1],cat:e[2],notes:e[3],builtin:true}));
+  return list.concat(customEvents.map((e,i)=>({...e,idx:i})));
+}
+function renderCalendar(){
+  const root = document.getElementById('calRoot');
+  root.innerHTML='';
+  const months=[{y:2026,m:8,label:'September 2026'},{y:2026,m:9,label:'October 2026'}];
+  const evs = allEvents();
+  const today = new Date().toISOString().slice(0,10);
+  months.forEach(({y,m,label})=>{
+    const wrap=document.createElement('div');wrap.className='month';
+    wrap.innerHTML=`<h3>${label}</h3>`;
+    const grid=document.createElement('div');grid.className='cal';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{const h=document.createElement('div');h.className='dow';h.textContent=d;grid.appendChild(h);});
+    const first=new Date(y,m,1);
+    const startPad=(first.getDay()+6)%7;
+    const dim=new Date(y,m+1,0).getDate();
+    for(let i=0;i<startPad;i++){const c=document.createElement('div');c.className='day out';grid.appendChild(c);}
+    for(let d=1;d<=dim;d++){
+      const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const cell=document.createElement('div');cell.className='day';
+      if(iso>='2026-09-17'&&iso<='2026-10-10')cell.classList.add('trip');
+      if(iso===today)cell.classList.add('today');
+      cell.innerHTML=`<div class="num">${d}</div>`;
+      evs.filter(e=>e.date===iso).forEach(e=>{
+        const pill=document.createElement('div');
+        pill.className='ev '+(e.builtin?e.cat:(e.cat==='Custom'?'Custom':e.cat));
+        if(!e.builtin)pill.classList.add('Custom');
+        pill.textContent=e.title;
+        pill.title=e.title;
+        pill.onclick=()=>showDetail(e);
+        cell.appendChild(pill);
+      });
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);root.appendChild(wrap);
+  });
+}
+function showDetail(e){
+  document.getElementById('evDetailTitle').textContent=e.title;
+  document.getElementById('evDetailBody').innerHTML=`<b>${fmtDate(e.date)}</b>\n\n${(e.notes||'No notes.').replace(/</g,'&lt;')}`;
+  const del=document.getElementById('evDeleteBtn');
+  if(!e.builtin){ del.style.display='inline-block'; del.onclick=async()=>{ customEvents.splice(e.idx,1); await store.set('customEvents',customEvents); detailModal.close(); renderCalendar(); }; }
+  else del.style.display='none';
+  detailModal.showModal();
+}
+function fmtDate(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});}
+function openAddEvent(){addModal.showModal();}
+async function saveNewEvent(ev){
+  ev.preventDefault();
+  customEvents.push({date:document.getElementById('nevDate').value,title:document.getElementById('nevTitle').value,cat:document.getElementById('nevCat').value,notes:document.getElementById('nevNotes').value,builtin:false});
+  await store.set('customEvents',customEvents);
+  addModal.close(); ev.target.reset(); renderCalendar();
+}
+
+/* ============ bookings ============ */
+/* [title, detail, due, url, linkLabel] — url/linkLabel optional */
+const BOOKINGS=[
+ ["Rifugio Lagazuoi — night of 28/9","Most popular hut on the route. Book FIRST. ~40€ deposit pp, half board.","NOW","https://www.rifugiolagazuoi.com/","rifugiolagazuoi.com"],
+ ["Rifugio Fanes or Lavarella — night of 27/9","Either works; Lavarella brews its own beer.","NOW","https://www.lavarella.it/","lavarella.it"],
+ ["Rifugio Sennes or Biella — night of 26/9","Sennes is slightly easier to reach from Braies.","NOW","https://www.rifugiosennes.com/","rifugiosennes.com"],
+ ["Flights: TLV→LCA (17/9), LCA→VCE + TLV→VCE (22/9), VCE→TLV (10/10)","Coordinate the 22/9 Venice arrivals within ~1h of each other.","This week"],
+ ["Rental car VCE, 22/9 → 10/10","18 days. Book early for automatic. Add all drivers.","This week"],
+ ["Cortina accommodation, 3n (22–25/9)","Shoulder season = decent prices. Ask about luggage storage during hut trek.","Soon","https://cortina.dolomiti.org/en/","cortina.dolomiti.org"],
+ ["Ortisei accommodation, 5-6n (29/9–4/10)","Look for sauna + laundry. Garni/B&B style is great value.","Soon","https://www.valgardena.it/en/","valgardena.it"],
+ ["Riva del Garda accommodation, 4n (5–9/10)","Lakefront or old town.","Soon","https://www.gardatrentino.it/en/","gardatrentino.it"],
+ ["Cyprus accommodation, 5n (17–22/9)","Limassol or Paphos base.","Soon","https://www.visitcyprus.com/","visitcyprus.com"],
+ ["Venice/Mestre airport hotel, 1n (9/10)","Mestre = cheaper, quick train to Venice.","Later","https://actv.avmspa.it/en","vaporetto tickets"],
+ ["Lago di Braies parking reservation (26/9)","Mandatory online booking in season — check autumn rules.","Sep","https://www.prags.bz/en/","prags.bz"],
+ ["Check Seceda + Lagazuoi lift autumn closing dates","Lifts wind down early-mid Oct — confirm before locking Val Gardena days.","Sep","https://www.seceda.it/","seceda.it"],
+ ["Travel insurance w/ mountain rescue cover","Check it covers hiking above 2,500m.","Sep"]
+];
+let bookState=[];
+async function renderBookings(){
+  const root=document.getElementById('bookList');root.innerHTML='';
+  BOOKINGS.forEach((b,i)=>{
+    /* the row is a div, not a label: a label would swallow clicks on the
+       booking link and toggle the checkbox instead of opening the site */
+    const row=document.createElement('div');row.className='check'+(bookState[i]?' done':'');
+    const id='bk'+i;
+    const link=b[3]?` <a class="book-link" href="${b[3]}" target="_blank" rel="noopener noreferrer">${b[4]} ↗</a>`:'';
+    row.innerHTML=`<input type="checkbox" id="${id}" ${bookState[i]?'checked':''}><div><label class="ct" for="${id}">${b[0]}</label><div class="cd">${b[1]}${link}</div></div><span class="due">${b[2]}</span>`;
+    row.querySelector('input').addEventListener('change',async e=>{bookState[i]=e.target.checked;await store.set('bookState',bookState);renderBookings();});
+    root.appendChild(row);
+  });
+  const done=bookState.filter(Boolean).length;
+  document.getElementById('bookBar').style.width=Math.round(done/BOOKINGS.length*100)+'%';
+}
+
+/* ============ budget ============ */
+const BUDGET=[
+ ["Flights (all 4 legs)",380,"TLV-LCA ~80, LCA-VCE ~150, VCE-TLV ~150; friends pay ~300"],
+ ["Rental car share (÷3)",230,"18 days incl. fuel + tolls + parking"],
+ ["Cyprus 5 nights",280,"Hotel/apt + food, before friends join"],
+ ["Cortina 3 nights (÷ share)",210,"B&B/hotel shoulder-season"],
+ ["Rifugios 3 nights half-board",240,"~75-85 pp/night incl. dinner + breakfast"],
+ ["Ortisei 5-6 nights",330,"Garni/B&B with breakfast"],
+ ["Lake Garda 4 nights",260,"Hotel/apt"],
+ ["Venice night + evening",90,"Mestre hotel + vaporetto + dinner"],
+ ["Food & restaurants",400,"~20-25/day outside huts"],
+ ["Lifts, tolls, entries",120,"Tre Cime toll, Seceda lift, Lagazuoi cable car, Ötzi museum"],
+ ["Buffer",150,"Weather changes, gelato emergencies"]
+];
+let budgetVals=BUDGET.map(b=>b[1]);
+function renderBudget(){
+  const tb=document.querySelector('#budgetTable tbody');tb.innerHTML='';
+  BUDGET.forEach((b,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${b[0]}</td><td><input type="number" min="0" value="${budgetVals[i]}"></td><td style="color:var(--rock-soft);font-size:12.5px">${b[2]}</td>`;
+    tr.querySelector('input').addEventListener('input',async e=>{budgetVals[i]=Number(e.target.value)||0;await store.set('budgetVals',budgetVals);updateTotals();});
+    tb.appendChild(tr);
+  });
+  updateTotals();
+}
+function updateTotals(){
+  const t=budgetVals.reduce((a,b)=>a+b,0);
+  document.getElementById('budTotal').textContent='€'+t.toLocaleString();
+  document.getElementById('budGroup').textContent='€'+(t*3).toLocaleString();
+}
+
+/* ============ packing ============ */
+const PACKING={
+ "Hut essentials":["Sleeping bag liner (mandatory!)","Cash — many huts card-free","Headlamp","Earplugs (dorm rooms)","Quick-dry towel","Slippers/crocs for inside huts"],
+ "On the trail":["Broken-in hiking boots","Poles (descents!)","Rain shell + warm layer","Hat + gloves (2,700m in autumn!)","2L water capacity","Sunscreen + sunglasses","Blister kit + basic first aid","Snacks / energy bars"],
+ "Everything else":["Passport","Driving licences (all drivers)","Swimwear (Cyprus + Garda)","Power adapter (EU type C/F)","Offline maps downloaded","Day pack 25-30L","Evening clothes for Venice dinner"]
+};
+let packState={};
+function renderPacking(){
+  const root=document.getElementById('packRoot');root.innerHTML='';
+  Object.entries(PACKING).forEach(([group,items])=>{
+    const g=document.createElement('div');g.className='pack-group';
+    g.innerHTML=`<h3>${group}</h3>`;
+    const extra=(packState._extra&&packState._extra[group])||[];
+    items.concat(extra).forEach(item=>{
+      const key=group+'|'+item;
+      const row=document.createElement('div');row.className='pack-item'+(packState[key]?' done':'');
+      const id='pk'+key.replace(/\W/g,'');
+      row.innerHTML=`<input type="checkbox" id="${id}" ${packState[key]?'checked':''}><label for="${id}">${item}</label>`;
+      row.querySelector('input').addEventListener('change',async e=>{packState[key]=e.target.checked;await store.set('packState',packState);renderPacking();});
+      g.appendChild(row);
+    });
+    const add=document.createElement('div');add.className='add-inline';
+    add.innerHTML=`<input placeholder="Add item…" maxlength="60"><button class="btn sm ghost">Add</button>`;
+    add.querySelector('button').addEventListener('click',async()=>{
+      const v=add.querySelector('input').value.trim();if(!v)return;
+      packState._extra=packState._extra||{};packState._extra[group]=(packState._extra[group]||[]).concat(v);
+      await store.set('packState',packState);renderPacking();
+    });
+    g.appendChild(add);
+    root.appendChild(g);
+  });
+}
+
+/* ============ notes ============ */
+const notesArea=document.getElementById('notesArea');
+let notesTimer;
+notesArea.addEventListener('input',()=>{clearTimeout(notesTimer);notesTimer=setTimeout(async()=>{await store.set('notes',notesArea.value);},400);});
+
+/* ============ export / import ============ */
+function exportData(){
+  const data={customEvents,bookState,budgetVals,packState,notes:notesArea.value,exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='alps-trip-backup.json';a.click();
+}
+async function importData(ev){
+  const file=ev.target.files[0];if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    customEvents=data.customEvents||[];bookState=data.bookState||[];budgetVals=data.budgetVals||BUDGET.map(b=>b[1]);packState=data.packState||{};notesArea.value=data.notes||'';
+    await store.set('customEvents',customEvents);await store.set('bookState',bookState);await store.set('budgetVals',budgetVals);await store.set('packState',packState);await store.set('notes',notesArea.value);
+    renderCalendar();renderBookings();renderBudget();renderPacking();
+    document.getElementById('saveHint').textContent='Backup imported ✓';
+  }catch(e){console.error('import failed for file', file.name, e);document.getElementById('saveHint').textContent='Import failed — is that the right file?';}
+}
+
+/* ============ init ============ */
+(async function init(){
+  customEvents=(await store.get('customEvents'))||[];
+  bookState=(await store.get('bookState'))||[];
+  budgetVals=(await store.get('budgetVals'))||BUDGET.map(b=>b[1]);
+  packState=(await store.get('packState'))||{};
+  notesArea.value=(await store.get('notes'))||'';
+  renderCalendar();renderBookings();renderBudget();renderPacking();
+})();
+</script>
+</body>
+</html>
