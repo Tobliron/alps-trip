@@ -1,0 +1,10 @@
+# Claude Code local settings — machine-specific, not part of the site
+.claude/
+
+# JSON backups exported from the Notes tab
+alps-trip-backup*.json
+
+# OS cruft
+Thumbs.db
+desktop.ini
+.DS_Store
