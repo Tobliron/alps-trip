@@ -1,6 +1,14 @@
 # Claude Code local settings — machine-specific, not part of the site
 .claude/
 
+# Node / Vite build. The GitHub Action builds app/dist from source on every
+# push, so committing either would just be a second, staler copy.
+node_modules/
+app/node_modules/
+app/dist/
+*.local
+.vite/
+
 # JSON backups exported from the Notes tab
 alps-trip-backup*.json
 

@@ -1,0 +1,109 @@
+/* ===========================================================================
+   Shugon — design tokens.
+
+   Carried over verbatim from the original Trip HQ page: same palette, same
+   type, same radii. The brief was extend, don't restyle.
+
+   Layout uses logical properties (inline-start/end, margin-inline) rather
+   than left/right wherever it costs nothing, so the Hebrew/RTL stage is a
+   dir="rtl" flip rather than a stylesheet rewrite.
+   =========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --rock: #38342F;
+  --rock-soft: #6B655D;
+  --pine: #2F5D50;
+  --pine-deep: #22443B;
+  --glow: #C94F6D;
+  --glow-soft: #F3DDE3;
+  --ice: #EEF1EF;
+  --paper: #FBFCFB;
+  --dusk: #5B7C99;
+  --dusk-soft: #DEE7EE;
+  --gold: #B98A2E;
+  --gold-soft: #F4EAD3;
+  --line: #DCE1DD;
+  --radius: 14px;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--rock);
+  line-height: 1.55;
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; font-size: 14px; color: var(--rock); }
+
+h1 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; line-height: 1.1; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--rock-soft); }
+
+/* --- buttons ------------------------------------------------------------- */
+.btn {
+  background: var(--pine); color: #fff; border: none; border-radius: 9px;
+  padding: 9px 15px; font-size: 13.5px; font-weight: 500;
+}
+.btn:hover { background: var(--pine-deep); }
+.btn.ghost { background: #fff; color: var(--pine); border: 1px solid var(--line); }
+.btn.ghost:hover { background: var(--ice); }
+.btn.sm { padding: 6px 11px; font-size: 12.5px; }
+.btn:focus-visible { outline: 2px solid var(--dusk); outline-offset: 2px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.linkish {
+  background: none; border: none; padding: 0; font-size: inherit;
+  color: var(--dusk); text-decoration: underline; cursor: pointer;
+}
+.linkish:hover { color: var(--pine); }
+
+/* --- shell --------------------------------------------------------------- */
+main { max-width: 1060px; margin-inline: auto; padding: 22px 16px 80px; }
+
+.card {
+  background: #fff; border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px;
+}
+
+.pill {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em;
+  padding: 3px 9px; border-radius: 99px; white-space: nowrap;
+}
+.pill.ok   { background: #E2EDE8; color: var(--pine); }
+.pill.warn { background: var(--gold-soft); color: #8A6620; }
+.pill.hot  { background: var(--glow-soft); color: #A03A55; }
+
+/* --- dialogs ------------------------------------------------------------- */
+dialog {
+  border: none; border-radius: var(--radius); padding: 0;
+  max-width: 420px; width: 92vw;
+  box-shadow: 0 24px 60px rgba(30, 40, 35, .25);
+}
+dialog::backdrop { background: rgba(34, 68, 59, .45); }
+.modal-in { padding: 22px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--rock-soft); margin-bottom: 4px; }
+.field input, .field textarea, .field select {
+  width: 100%; border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; background: #fff;
+}
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+
+.error { color: #A03A55; font-size: 13px; margin-top: 8px; }
