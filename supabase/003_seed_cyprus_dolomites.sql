@@ -19,12 +19,13 @@ begin;
 -- Idempotent: wipe and reinsert this one trip, leave any other trip alone.
 delete from public.trips where slug = 'cyprus-dolomites-2026';
 
+create temp table _trip as
 with t as (
   insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)
   values ('cyprus-dolomites-2026', 'Cyprus & the Dolomites', '24 days · 3 friends · TLV → LCA → VCE → TLV', '2026-09-17', '2026-10-10', 0)
   returning id
 )
-select id as trip_id into temporary table _trip from t;
+select id as trip_id from t;
 
 -- people
 insert into public.people (trip_id, name, sort_order) select trip_id, 'Liron', 0 from _trip;

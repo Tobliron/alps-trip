@@ -112,6 +112,8 @@ where a.booking is not null
   and coalesce(a.booking->>'needed','false') = 'true'
   and coalesce(a.booking->>'status','todo') <> 'done';
 
+grant select on public.outstanding_bookings to anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- budget / packing -- rows now, not positional arrays
 -- ---------------------------------------------------------------------------

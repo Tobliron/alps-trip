@@ -89,12 +89,16 @@ L.push('');
 L.push('-- Idempotent: wipe and reinsert this one trip, leave any other trip alone.');
 L.push(`delete from public.trips where slug = ${q(TRIP_SLUG)};`);
 L.push('');
+// CREATE TEMP TABLE AS, not SELECT ... INTO TEMPORARY TABLE: the INTO form
+// does not parse once the statement is prefixed with a WITH clause, and
+// Postgres reports it as `relation "temporary" does not exist`.
+L.push('create temp table _trip as');
 L.push('with t as (');
 L.push('  insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)');
 L.push(`  values (${q(TRIP_SLUG)}, ${q('Cyprus & the Dolomites')}, ${q('24 days · 3 friends · TLV → LCA → VCE → TLV')}, ${q(TRIP_START)}, ${q(TRIP_END)}, 0)`);
 L.push('  returning id');
 L.push(')');
-L.push('select id as trip_id into temporary table _trip from t;');
+L.push('select id as trip_id from t;');
 L.push('');
 
 // people
