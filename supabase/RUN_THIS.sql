@@ -242,192 +242,214 @@ end $$;
 -- guessing the rest would invent facts. Drag them onto days in the app.
 -- ===========================================================================
 
-begin;
+-- Every statement below stands alone: no temp tables, no session state,
+-- no explicit transaction. An earlier version staged the new trip id in a
+-- temp table, which works in psql but fails in the Supabase SQL editor —
+-- a temp table lives and dies with one session, and the editor does not
+-- guarantee that the whole script runs in a single one. Instead each
+-- statement looks the trip up by its slug, so order is the only
+-- requirement and re-running is always safe.
 
--- Idempotent: wipe and reinsert this one trip, leave any other trip alone.
+-- Wipe any previous copy of this trip; cascades to its days and activities.
 delete from public.trips where slug = 'cyprus-dolomites-2026';
 
-create temp table _trip as
-with t as (
-  insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)
-  values ('cyprus-dolomites-2026', 'Cyprus & the Dolomites', '24 days · 3 friends · TLV → LCA → VCE → TLV', '2026-09-17', '2026-10-10', 0)
-  returning id
-)
-select id as trip_id from t;
+insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)
+values ('cyprus-dolomites-2026', 'Cyprus & the Dolomites', '24 days · 3 friends · TLV → LCA → VCE → TLV', '2026-09-17', '2026-10-10', 0);
 
 -- people
-insert into public.people (trip_id, name, sort_order) select trip_id, 'Liron', 0 from _trip;
-insert into public.people (trip_id, name, sort_order) select trip_id, 'Sagi', 1 from _trip;
-insert into public.people (trip_id, name, sort_order) select trip_id, 'Buza', 2 from _trip;
+insert into public.people (trip_id, name, sort_order) select id, 'Liron', 0 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.people (trip_id, name, sort_order) select id, 'Sagi', 1 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.people (trip_id, name, sort_order) select id, 'Buza', 2 from public.trips where slug = 'cyprus-dolomites-2026';
 
 -- days: every date in the trip, so empty days still exist to drag onto
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-17', '✈️ TLV → Larnaca', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-18', 'Troodos Mountains hike', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-19', 'Coast day: Akamas / Cape Greco', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-20', 'Relaxed day · Erev Yom Kippur', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Relaxed day · Erev Yom Kippur' from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-21', 'Yom Kippur — rest day', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Yom Kippur — rest day' from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-22', '✈️ LCA→VCE (me) + TLV→VCE (friends) → Cortina', 'Cortina d''Ampezzo', 'cortina', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-23', 'Tre Cime di Lavaredo loop', 'Cortina d''Ampezzo', 'cortina', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-24', 'Lago di Sorapis', 'Cortina d''Ampezzo', 'cortina', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-25', 'Cinque Torri + pack hut bags · Erev Sukkot', 'Cortina d''Ampezzo', 'cortina', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-26', 'Hut day 1: Braies → Rif. Sennes/Biella', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-27', 'Hut day 2: → Rif. Fanes/Lavarella', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-28', 'Hut day 3: → Rif. Lagazuoi (2,752m)', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-29', 'Descend → drive to Ortisei', 'Ortisei, Val Gardena', 'gardena', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-30', 'Seceda ridgeline', 'Ortisei, Val Gardena', 'gardena', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-01', 'Alpe di Siusi meadows', 'Ortisei, Val Gardena', 'gardena', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-02', 'Sassolungo circuit · Erev Simchat Torah', 'Ortisei, Val Gardena', 'gardena', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-03', 'Rest day: Vallunga stroll · Simchat Torah', 'Ortisei, Val Gardena', 'gardena', 'Rest day: Vallunga stroll · Simchat Torah' from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-04', 'Val di Funes: Adolf Munkel trail', 'Ortisei, Val Gardena', 'gardena', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-05', 'Bolzano → Lake Garda', 'Riva del Garda', 'garda', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-06', 'Ponale trail above the lake', 'Riva del Garda', 'garda', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-07', 'Malcesine + Monte Baldo', 'Riva del Garda', 'garda', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-08', 'Garda flex day 🍷', 'Riva del Garda', 'garda', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-09', 'Drive to Venice + evening in the city', 'Venice / Mestre', 'venice', null from _trip;
-insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-10', '✈️ Venice → TLV', 'Venice / Mestre', 'venice', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-17', '✈️ TLV → Larnaca', 'Cyprus (Limassol or Paphos)', 'cyprus', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-18', 'Troodos Mountains hike', 'Cyprus (Limassol or Paphos)', 'cyprus', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-19', 'Coast day: Akamas / Cape Greco', 'Cyprus (Limassol or Paphos)', 'cyprus', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-20', 'Relaxed day · Erev Yom Kippur', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Relaxed day · Erev Yom Kippur' from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-21', 'Yom Kippur — rest day', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Yom Kippur — rest day' from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-22', '✈️ LCA→VCE (me) + TLV→VCE (friends) → Cortina', 'Cortina d''Ampezzo', 'cortina', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-23', 'Tre Cime di Lavaredo loop', 'Cortina d''Ampezzo', 'cortina', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-24', 'Lago di Sorapis', 'Cortina d''Ampezzo', 'cortina', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-25', 'Cinque Torri + pack hut bags · Erev Sukkot', 'Cortina d''Ampezzo', 'cortina', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-26', 'Hut day 1: Braies → Rif. Sennes/Biella', 'Rifugio (Alta Via 1)', 'huts', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-27', 'Hut day 2: → Rif. Fanes/Lavarella', 'Rifugio (Alta Via 1)', 'huts', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-28', 'Hut day 3: → Rif. Lagazuoi (2,752m)', 'Rifugio (Alta Via 1)', 'huts', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-29', 'Descend → drive to Ortisei', 'Ortisei, Val Gardena', 'gardena', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-09-30', 'Seceda ridgeline', 'Ortisei, Val Gardena', 'gardena', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-01', 'Alpe di Siusi meadows', 'Ortisei, Val Gardena', 'gardena', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-02', 'Sassolungo circuit · Erev Simchat Torah', 'Ortisei, Val Gardena', 'gardena', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-03', 'Rest day: Vallunga stroll · Simchat Torah', 'Ortisei, Val Gardena', 'gardena', 'Rest day: Vallunga stroll · Simchat Torah' from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-04', 'Val di Funes: Adolf Munkel trail', 'Ortisei, Val Gardena', 'gardena', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-05', 'Bolzano → Lake Garda', 'Riva del Garda', 'garda', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-06', 'Ponale trail above the lake', 'Riva del Garda', 'garda', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-07', 'Malcesine + Monte Baldo', 'Riva del Garda', 'garda', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-08', 'Garda flex day 🍷', 'Riva del Garda', 'garda', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-09', 'Drive to Venice + evening in the city', 'Venice / Mestre', 'venice', null from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, '2026-10-10', '✈️ Venice → TLV', 'Venice / Mestre', 'venice', null from public.trips where slug = 'cyprus-dolomites-2026';
 
 -- one activity per existing calendar entry, notes preserved verbatim
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, '✈️ TLV → Larnaca', 'flight', 'BOOK — add airline + time.
+  select t.id, d.id, 0, '✈️ TLV → Larnaca', 'flight', 'BOOK — add airline + time.
 Arrive Cyprus, settle in (Limassol or Paphos base). Seafront dinner.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-17';
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-17'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Troodos Mountains hike', 'hike', 'Warm-up training day: Artemis/Atalanti trail on Mt Olympus, Kykkos Monastery, Omodos wine village.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-18';
+  select t.id, d.id, 0, 'Troodos Mountains hike', 'hike', 'Warm-up training day: Artemis/Atalanti trail on Mt Olympus, Kykkos Monastery, Omodos wine village.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-18'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Coast day: Akamas / Cape Greco', 'plan', 'Blue Lagoon, sea caves, swim. Relaxed Shabbat pace.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-19';
+  select t.id, d.id, 0, 'Coast day: Akamas / Cape Greco', 'plan', 'Blue Lagoon, sea caves, swim. Relaxed Shabbat pace.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-19'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Relaxed day · Erev Yom Kippur', 'holiday', 'Morning swim, big early meal. Fast begins at sunset.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-20';
+  select t.id, d.id, 0, 'Relaxed day · Erev Yom Kippur', 'holiday', 'Morning swim, big early meal. Fast begins at sunset.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-20'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Yom Kippur — rest day', 'holiday', 'Quiet day in Cyprus. Fast ends at nightfall. Pack for tomorrow''s flight.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-21';
+  select t.id, d.id, 0, 'Yom Kippur — rest day', 'holiday', 'Quiet day in Cyprus. Fast ends at nightfall. Pack for tomorrow''s flight.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-21'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, '✈️ LCA→VCE (me) + TLV→VCE (friends) → Cortina', 'flight', 'BOOK — coordinate arrival times!
+  select t.id, d.id, 0, '✈️ LCA→VCE (me) + TLV→VCE (friends) → Cortina', 'flight', 'BOOK — coordinate arrival times!
 Meet at Venice Marco Polo, pick up rental car, drive ~2h to Cortina. Grocery + gear check.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-22';
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-22'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Tre Cime di Lavaredo loop', 'hike', 'Leave Cortina 6:30 — toll-road parking fills by 8. ~10km loop, lunch at Rif. Locatelli.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-23';
+  select t.id, d.id, 0, 'Tre Cime di Lavaredo loop', 'hike', 'Leave Cortina 6:30 — toll-road parking fills by 8. ~10km loop, lunch at Rif. Locatelli.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-23'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Lago di Sorapis', 'hike', '~12km from Passo Tre Croci, trail 215. Cabled ledges — steady feet, poles for descent.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-24';
+  select t.id, d.id, 0, 'Lago di Sorapis', 'hike', '~12km from Passo Tre Croci, trail 215. Cabled ledges — steady feet, poles for descent.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-24'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Cinque Torri + pack hut bags · Erev Sukkot', 'hike', 'Light day at the WWI open-air museum. Evening: hut bags only, big luggage stays at hotel/car. Sukkot begins at sunset.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-25';
+  select t.id, d.id, 0, 'Cinque Torri + pack hut bags · Erev Sukkot', 'hike', 'Light day at the WWI open-air museum. Evening: hut bags only, big luggage stays at hotel/car. Sukkot begins at sunset.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-25'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Hut day 1: Braies → Rif. Sennes/Biella', 'hike', 'Reserve Braies parking online or taxi in. ~6h, +900m. Sukkot I.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-26';
+  select t.id, d.id, 0, 'Hut day 1: Braies → Rif. Sennes/Biella', 'hike', 'Reserve Braies parking online or taxi in. ~6h, +900m. Sukkot I.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-26'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Hut day 2: → Rif. Fanes/Lavarella', 'hike', '~5-6h across the Fanes karst plateau. Lavarella has its own tiny brewery.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-27';
+  select t.id, d.id, 0, 'Hut day 2: → Rif. Fanes/Lavarella', 'hike', '~5-6h across the Fanes karst plateau. Lavarella has its own tiny brewery.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-27'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Hut day 3: → Rif. Lagazuoi (2,752m)', 'hike', '~6-7h via Forcella del Lago. Sunset + sunrise at the top = trip highlight.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-28';
+  select t.id, d.id, 0, 'Hut day 3: → Rif. Lagazuoi (2,752m)', 'hike', '~6-7h via Forcella del Lago. Sunset + sunrise at the top = trip highlight.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-28'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Descend → drive to Ortisei', 'plan', 'Cable car or WWI tunnel route down to Falzarego. Car → Passo Gardena → Ortisei (~1.5h). Check in 5-6 nights. Laundry. Pizza.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-29';
+  select t.id, d.id, 0, 'Descend → drive to Ortisei', 'plan', 'Cable car or WWI tunnel route down to Falzarego. Car → Passo Gardena → Ortisei (~1.5h). Check in 5-6 nights. Laundry. Pizza.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-29'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Seceda ridgeline', 'hike', 'Lift from Ortisei — CONFIRM autumn closing date. Ridge walk, descend Val d''Anna.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-30';
+  select t.id, d.id, 0, 'Seceda ridgeline', 'hike', 'Lift from Ortisei — CONFIRM autumn closing date. Ridge walk, descend Val d''Anna.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-09-30'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Alpe di Siusi meadows', 'plan', 'Europe''s biggest alpine meadow, gentle day, coffee at a malga.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-01';
+  select t.id, d.id, 0, 'Alpe di Siusi meadows', 'plan', 'Europe''s biggest alpine meadow, gentle day, coffee at a malga.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-01'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Sassolungo circuit · Erev Simchat Torah', 'hike', '~17km loop from Passo Sella (or shorter Città dei Sassi option). Holiday begins at sunset.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-02';
+  select t.id, d.id, 0, 'Sassolungo circuit · Erev Simchat Torah', 'hike', '~17km loop from Passo Sella (or shorter Città dei Sassi option). Holiday begins at sunset.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-02'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Rest day: Vallunga stroll · Simchat Torah', 'holiday', 'Flat valley walk, sauna, gelato, Ortisei pedestrian street.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-03';
+  select t.id, d.id, 0, 'Rest day: Vallunga stroll · Simchat Torah', 'holiday', 'Flat valley walk, sauna, gelato, Ortisei pedestrian street.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-03'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Val di Funes: Adolf Munkel trail', 'hike', '~9km under the Odle spires + the Santa Maddalena postcard view. Geisleralm lunch if open.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-04';
+  select t.id, d.id, 0, 'Val di Funes: Adolf Munkel trail', 'hike', '~9km under the Odle spires + the Santa Maddalena postcard view. Geisleralm lunch if open.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-04'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Bolzano → Lake Garda', 'plan', 'Ötzi museum + old town, then drive ~2h to Riva del Garda. Check in 4 nights.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-05';
+  select t.id, d.id, 0, 'Bolzano → Lake Garda', 'plan', 'Ötzi museum + old town, then drive ~2h to Riva del Garda. Check in 4 nights.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-05'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Ponale trail above the lake', 'hike', 'Carved into the cliffs — easy, spectacular. Swim after.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-06';
+  select t.id, d.id, 0, 'Ponale trail above the lake', 'hike', 'Carved into the cliffs — easy, spectacular. Swim after.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-06'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Malcesine + Monte Baldo', 'hike', 'Ferry or drive, rotating cable car up, ridge walk with lake views.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-07';
+  select t.id, d.id, 0, 'Malcesine + Monte Baldo', 'hike', 'Ferry or drive, rotating cable car up, ridge walk with lake views.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-07'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Garda flex day 🍷', 'plan', 'Limone, kayak, Bardolino wine tasting, or pure lakefront laziness. Celebration dinner.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-08';
+  select t.id, d.id, 0, 'Garda flex day 🍷', 'plan', 'Limone, kayak, Bardolino wine tasting, or pure lakefront laziness. Celebration dinner.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-08'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, 'Drive to Venice + evening in the city', 'plan', '~2h. Bags at Mestre hotel, vaporetto in, golden-hour wander, last dinner.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-09';
+  select t.id, d.id, 0, 'Drive to Venice + evening in the city', 'plan', '~2h. Bags at Mestre hotel, vaporetto in, golden-hour wander, last dinner.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-09'
+  where t.slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
-  select t.trip_id, d.id, 0, '✈️ Venice → TLV', 'flight', 'BOOK — add time. Return rental car at VCE first.'
-  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-10';
+  select t.id, d.id, 0, '✈️ Venice → TLV', 'flight', 'BOOK — add time. Return rental car at VCE first.'
+  from public.trips t join public.days d on d.trip_id = t.id and d.date = '2026-10-10'
+  where t.slug = 'cyprus-dolomites-2026';
 
 -- bookings: unscheduled backlog, each carrying its booking payload
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 0, 'Rifugio Lagazuoi — night of 28/9', 'booking', 'Most popular hut on the route. Book FIRST. ~40€ deposit pp, half board.', '{"needed":true,"status":"todo","due":"NOW","note":"Most popular hut on the route. Book FIRST. ~40€ deposit pp, half board.","url":"https://www.rifugiolagazuoi.com/","linkLabel":"rifugiolagazuoi.com"}'::jsonb from _trip;
+  select id, null, 0, 'Rifugio Lagazuoi — night of 28/9', 'booking', 'Most popular hut on the route. Book FIRST. ~40€ deposit pp, half board.', '{"needed":true,"status":"todo","due":"NOW","note":"Most popular hut on the route. Book FIRST. ~40€ deposit pp, half board.","url":"https://www.rifugiolagazuoi.com/","linkLabel":"rifugiolagazuoi.com"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 1, 'Rifugio Fanes or Lavarella — night of 27/9', 'booking', 'Either works; Lavarella brews its own beer.', '{"needed":true,"status":"todo","due":"NOW","note":"Either works; Lavarella brews its own beer.","url":"https://www.lavarella.it/","linkLabel":"lavarella.it"}'::jsonb from _trip;
+  select id, null, 1, 'Rifugio Fanes or Lavarella — night of 27/9', 'booking', 'Either works; Lavarella brews its own beer.', '{"needed":true,"status":"todo","due":"NOW","note":"Either works; Lavarella brews its own beer.","url":"https://www.lavarella.it/","linkLabel":"lavarella.it"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 2, 'Rifugio Sennes or Biella — night of 26/9', 'booking', 'Sennes is slightly easier to reach from Braies.', '{"needed":true,"status":"todo","due":"NOW","note":"Sennes is slightly easier to reach from Braies.","url":"https://www.rifugiosennes.com/","linkLabel":"rifugiosennes.com"}'::jsonb from _trip;
+  select id, null, 2, 'Rifugio Sennes or Biella — night of 26/9', 'booking', 'Sennes is slightly easier to reach from Braies.', '{"needed":true,"status":"todo","due":"NOW","note":"Sennes is slightly easier to reach from Braies.","url":"https://www.rifugiosennes.com/","linkLabel":"rifugiosennes.com"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 3, 'Flights: TLV→LCA (17/9), LCA→VCE + TLV→VCE (22/9), VCE→TLV (10/10)', 'booking', 'Coordinate the 22/9 Venice arrivals within ~1h of each other.', '{"needed":true,"status":"todo","due":"This week","note":"Coordinate the 22/9 Venice arrivals within ~1h of each other.","url":null,"linkLabel":null}'::jsonb from _trip;
+  select id, null, 3, 'Flights: TLV→LCA (17/9), LCA→VCE + TLV→VCE (22/9), VCE→TLV (10/10)', 'booking', 'Coordinate the 22/9 Venice arrivals within ~1h of each other.', '{"needed":true,"status":"todo","due":"This week","note":"Coordinate the 22/9 Venice arrivals within ~1h of each other.","url":null,"linkLabel":null}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 4, 'Rental car VCE, 22/9 → 10/10', 'booking', '18 days. Book early for automatic. Add all drivers.', '{"needed":true,"status":"todo","due":"This week","note":"18 days. Book early for automatic. Add all drivers.","url":null,"linkLabel":null}'::jsonb from _trip;
+  select id, null, 4, 'Rental car VCE, 22/9 → 10/10', 'booking', '18 days. Book early for automatic. Add all drivers.', '{"needed":true,"status":"todo","due":"This week","note":"18 days. Book early for automatic. Add all drivers.","url":null,"linkLabel":null}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 5, 'Cortina accommodation, 3n (22–25/9)', 'booking', 'Shoulder season = decent prices. Ask about luggage storage during hut trek.', '{"needed":true,"status":"todo","due":"Soon","note":"Shoulder season = decent prices. Ask about luggage storage during hut trek.","url":"https://cortina.dolomiti.org/en/","linkLabel":"cortina.dolomiti.org"}'::jsonb from _trip;
+  select id, null, 5, 'Cortina accommodation, 3n (22–25/9)', 'booking', 'Shoulder season = decent prices. Ask about luggage storage during hut trek.', '{"needed":true,"status":"todo","due":"Soon","note":"Shoulder season = decent prices. Ask about luggage storage during hut trek.","url":"https://cortina.dolomiti.org/en/","linkLabel":"cortina.dolomiti.org"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 6, 'Ortisei accommodation, 5-6n (29/9–4/10)', 'booking', 'Look for sauna + laundry. Garni/B&B style is great value.', '{"needed":true,"status":"todo","due":"Soon","note":"Look for sauna + laundry. Garni/B&B style is great value.","url":"https://www.valgardena.it/en/","linkLabel":"valgardena.it"}'::jsonb from _trip;
+  select id, null, 6, 'Ortisei accommodation, 5-6n (29/9–4/10)', 'booking', 'Look for sauna + laundry. Garni/B&B style is great value.', '{"needed":true,"status":"todo","due":"Soon","note":"Look for sauna + laundry. Garni/B&B style is great value.","url":"https://www.valgardena.it/en/","linkLabel":"valgardena.it"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 7, 'Riva del Garda accommodation, 4n (5–9/10)', 'booking', 'Lakefront or old town.', '{"needed":true,"status":"todo","due":"Soon","note":"Lakefront or old town.","url":"https://www.gardatrentino.it/en/","linkLabel":"gardatrentino.it"}'::jsonb from _trip;
+  select id, null, 7, 'Riva del Garda accommodation, 4n (5–9/10)', 'booking', 'Lakefront or old town.', '{"needed":true,"status":"todo","due":"Soon","note":"Lakefront or old town.","url":"https://www.gardatrentino.it/en/","linkLabel":"gardatrentino.it"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 8, 'Cyprus accommodation, 5n (17–22/9)', 'booking', 'Limassol or Paphos base.', '{"needed":true,"status":"todo","due":"Soon","note":"Limassol or Paphos base.","url":"https://www.visitcyprus.com/","linkLabel":"visitcyprus.com"}'::jsonb from _trip;
+  select id, null, 8, 'Cyprus accommodation, 5n (17–22/9)', 'booking', 'Limassol or Paphos base.', '{"needed":true,"status":"todo","due":"Soon","note":"Limassol or Paphos base.","url":"https://www.visitcyprus.com/","linkLabel":"visitcyprus.com"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 9, 'Venice/Mestre airport hotel, 1n (9/10)', 'booking', 'Mestre = cheaper, quick train to Venice.', '{"needed":true,"status":"todo","due":"Later","note":"Mestre = cheaper, quick train to Venice.","url":"https://actv.avmspa.it/en","linkLabel":"vaporetto tickets"}'::jsonb from _trip;
+  select id, null, 9, 'Venice/Mestre airport hotel, 1n (9/10)', 'booking', 'Mestre = cheaper, quick train to Venice.', '{"needed":true,"status":"todo","due":"Later","note":"Mestre = cheaper, quick train to Venice.","url":"https://actv.avmspa.it/en","linkLabel":"vaporetto tickets"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 10, 'Lago di Braies parking reservation (26/9)', 'booking', 'Mandatory online booking in season — check autumn rules.', '{"needed":true,"status":"todo","due":"Sep","note":"Mandatory online booking in season — check autumn rules.","url":"https://www.prags.bz/en/","linkLabel":"prags.bz"}'::jsonb from _trip;
+  select id, null, 10, 'Lago di Braies parking reservation (26/9)', 'booking', 'Mandatory online booking in season — check autumn rules.', '{"needed":true,"status":"todo","due":"Sep","note":"Mandatory online booking in season — check autumn rules.","url":"https://www.prags.bz/en/","linkLabel":"prags.bz"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 11, 'Check Seceda + Lagazuoi lift autumn closing dates', 'booking', 'Lifts wind down early-mid Oct — confirm before locking Val Gardena days.', '{"needed":true,"status":"todo","due":"Sep","note":"Lifts wind down early-mid Oct — confirm before locking Val Gardena days.","url":"https://www.seceda.it/","linkLabel":"seceda.it"}'::jsonb from _trip;
+  select id, null, 11, 'Check Seceda + Lagazuoi lift autumn closing dates', 'booking', 'Lifts wind down early-mid Oct — confirm before locking Val Gardena days.', '{"needed":true,"status":"todo","due":"Sep","note":"Lifts wind down early-mid Oct — confirm before locking Val Gardena days.","url":"https://www.seceda.it/","linkLabel":"seceda.it"}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
-  select trip_id, null, 12, 'Travel insurance w/ mountain rescue cover', 'booking', 'Check it covers hiking above 2,500m.', '{"needed":true,"status":"todo","due":"Sep","note":"Check it covers hiking above 2,500m.","url":null,"linkLabel":null}'::jsonb from _trip;
+  select id, null, 12, 'Travel insurance w/ mountain rescue cover', 'booking', 'Check it covers hiking above 2,500m.', '{"needed":true,"status":"todo","due":"Sep","note":"Check it covers hiking above 2,500m.","url":null,"linkLabel":null}'::jsonb from public.trips where slug = 'cyprus-dolomites-2026';
 
 -- budget
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Flights (all 4 legs)', 380, 'TLV-LCA ~80, LCA-VCE ~150, VCE-TLV ~150; friends pay ~300', 0 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Rental car share (÷3)', 230, '18 days incl. fuel + tolls + parking', 1 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Cyprus 5 nights', 280, 'Hotel/apt + food, before friends join', 2 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Cortina 3 nights (÷ share)', 210, 'B&B/hotel shoulder-season', 3 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Rifugios 3 nights half-board', 240, '~75-85 pp/night incl. dinner + breakfast', 4 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Ortisei 5-6 nights', 330, 'Garni/B&B with breakfast', 5 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Lake Garda 4 nights', 260, 'Hotel/apt', 6 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Venice night + evening', 90, 'Mestre hotel + vaporetto + dinner', 7 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Food & restaurants', 400, '~20-25/day outside huts', 8 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Lifts, tolls, entries', 120, 'Tre Cime toll, Seceda lift, Lagazuoi cable car, Ötzi museum', 9 from _trip;
-insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Buffer', 150, 'Weather changes, gelato emergencies', 10 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Flights (all 4 legs)', 380, 'TLV-LCA ~80, LCA-VCE ~150, VCE-TLV ~150; friends pay ~300', 0 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Rental car share (÷3)', 230, '18 days incl. fuel + tolls + parking', 1 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Cyprus 5 nights', 280, 'Hotel/apt + food, before friends join', 2 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Cortina 3 nights (÷ share)', 210, 'B&B/hotel shoulder-season', 3 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Rifugios 3 nights half-board', 240, '~75-85 pp/night incl. dinner + breakfast', 4 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Ortisei 5-6 nights', 330, 'Garni/B&B with breakfast', 5 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Lake Garda 4 nights', 260, 'Hotel/apt', 6 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Venice night + evening', 90, 'Mestre hotel + vaporetto + dinner', 7 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Food & restaurants', 400, '~20-25/day outside huts', 8 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Lifts, tolls, entries', 120, 'Tre Cime toll, Seceda lift, Lagazuoi cable car, Ötzi museum', 9 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, 'Buffer', 150, 'Weather changes, gelato emergencies', 10 from public.trips where slug = 'cyprus-dolomites-2026';
 
 -- packing
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Sleeping bag liner (mandatory!)', 0 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Cash — many huts card-free', 1 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Headlamp', 2 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Earplugs (dorm rooms)', 3 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Quick-dry towel', 4 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Slippers/crocs for inside huts', 5 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Broken-in hiking boots', 6 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Poles (descents!)', 7 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Rain shell + warm layer', 8 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Hat + gloves (2,700m in autumn!)', 9 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', '2L water capacity', 10 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Sunscreen + sunglasses', 11 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Blister kit + basic first aid', 12 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Snacks / energy bars', 13 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Passport', 14 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Driving licences (all drivers)', 15 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Swimwear (Cyprus + Garda)', 16 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Power adapter (EU type C/F)', 17 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Offline maps downloaded', 18 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Day pack 25-30L', 19 from _trip;
-insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Evening clothes for Venice dinner', 20 from _trip;
-
-drop table _trip;
-commit;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Sleeping bag liner (mandatory!)', 0 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Cash — many huts card-free', 1 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Headlamp', 2 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Earplugs (dorm rooms)', 3 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Quick-dry towel', 4 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Hut essentials', 'Slippers/crocs for inside huts', 5 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Broken-in hiking boots', 6 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Poles (descents!)', 7 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Rain shell + warm layer', 8 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Hat + gloves (2,700m in autumn!)', 9 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', '2L water capacity', 10 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Sunscreen + sunglasses', 11 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Blister kit + basic first aid', 12 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'On the trail', 'Snacks / energy bars', 13 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Passport', 14 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Driving licences (all drivers)', 15 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Swimwear (Cyprus + Garda)', 16 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Power adapter (EU type C/F)', 17 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Offline maps downloaded', 18 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Day pack 25-30L', 19 from public.trips where slug = 'cyprus-dolomites-2026';
+insert into public.packing_items (trip_id, group_name, label, sort_order) select id, 'Everything else', 'Evening clothes for Venice dinner', 20 from public.trips where slug = 'cyprus-dolomites-2026';
 
 -- ===========================================================================
 -- Shugon : storage buckets for photos, GPX tracks, receipts and confirmations.

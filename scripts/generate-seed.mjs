@@ -84,27 +84,28 @@ L.push('-- Bookings are seeded UNSCHEDULED (day_id null). Only some name a date,
 L.push('-- guessing the rest would invent facts. Drag them onto days in the app.');
 L.push('-- ===========================================================================');
 L.push('');
-L.push('begin;');
+L.push('-- Every statement below stands alone: no temp tables, no session state,');
+L.push('-- no explicit transaction. An earlier version staged the new trip id in a');
+L.push('-- temp table, which works in psql but fails in the Supabase SQL editor —');
+L.push('-- a temp table lives and dies with one session, and the editor does not');
+L.push('-- guarantee that the whole script runs in a single one. Instead each');
+L.push('-- statement looks the trip up by its slug, so order is the only');
+L.push('-- requirement and re-running is always safe.');
 L.push('');
-L.push('-- Idempotent: wipe and reinsert this one trip, leave any other trip alone.');
+L.push('-- Wipe any previous copy of this trip; cascades to its days and activities.');
 L.push(`delete from public.trips where slug = ${q(TRIP_SLUG)};`);
 L.push('');
-// CREATE TEMP TABLE AS, not SELECT ... INTO TEMPORARY TABLE: the INTO form
-// does not parse once the statement is prefixed with a WITH clause, and
-// Postgres reports it as `relation "temporary" does not exist`.
-L.push('create temp table _trip as');
-L.push('with t as (');
-L.push('  insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)');
-L.push(`  values (${q(TRIP_SLUG)}, ${q('Cyprus & the Dolomites')}, ${q('24 days · 3 friends · TLV → LCA → VCE → TLV')}, ${q(TRIP_START)}, ${q(TRIP_END)}, 0)`);
-L.push('  returning id');
-L.push(')');
-L.push('select id as trip_id from t;');
+L.push('insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)');
+L.push(`values (${q(TRIP_SLUG)}, ${q('Cyprus & the Dolomites')}, ${q('24 days · 3 friends · TLV → LCA → VCE → TLV')}, ${q(TRIP_START)}, ${q(TRIP_END)}, 0);`);
 L.push('');
+
+/** Every insert resolves the trip by slug, so no statement depends on another. */
+const FROM_TRIP = `from public.trips where slug = ${q(TRIP_SLUG)}`;
 
 // people
 L.push('-- people');
 PEOPLE.forEach((p, i) => {
-  L.push(`insert into public.people (trip_id, name, sort_order) select trip_id, ${q(p)}, ${i} from _trip;`);
+  L.push(`insert into public.people (trip_id, name, sort_order) select id, ${q(p)}, ${i} ${FROM_TRIP};`);
 });
 L.push('');
 
@@ -115,7 +116,7 @@ for (const iso of eachDate(TRIP_START, TRIP_END)) {
   const ev = byDate.get(iso);
   const [phase, base] = phaseFor(iso);
   const holiday = ev && ev[2] === 'Holiday' ? ev[1] : null;
-  L.push(`insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, ${q(iso)}, ${q(ev ? ev[1] : null)}, ${q(base)}, ${q(phase)}, ${q(holiday)} from _trip;`);
+  L.push(`insert into public.days (trip_id, date, title, base_location, phase, holiday) select id, ${q(iso)}, ${q(ev ? ev[1] : null)}, ${q(base)}, ${q(phase)}, ${q(holiday)} ${FROM_TRIP};`);
 }
 L.push('');
 
@@ -123,8 +124,9 @@ L.push('');
 L.push('-- one activity per existing calendar entry, notes preserved verbatim');
 for (const [iso, title, cat, notes] of EVENTS) {
   L.push(`insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)`);
-  L.push(`  select t.trip_id, d.id, 0, ${q(title)}, ${q(String(cat).toLowerCase())}, ${q(notes)}`);
-  L.push(`  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = ${q(iso)};`);
+  L.push(`  select t.id, d.id, 0, ${q(title)}, ${q(String(cat).toLowerCase())}, ${q(notes)}`);
+  L.push(`  from public.trips t join public.days d on d.trip_id = t.id and d.date = ${q(iso)}`);
+  L.push(`  where t.slug = ${q(TRIP_SLUG)};`);
 }
 L.push('');
 
@@ -133,14 +135,14 @@ L.push('-- bookings: unscheduled backlog, each carrying its booking payload');
 BOOKINGS.forEach(([title, detail, due, url, linkLabel], i) => {
   const booking = { needed: true, status: 'todo', due: due || null, note: detail || null, url: url || null, linkLabel: linkLabel || null };
   L.push(`insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)`);
-  L.push(`  select trip_id, null, ${i}, ${q(title)}, 'booking', ${q(detail)}, ${j(booking)} from _trip;`);
+  L.push(`  select id, null, ${i}, ${q(title)}, 'booking', ${q(detail)}, ${j(booking)} ${FROM_TRIP};`);
 });
 L.push('');
 
 // budget
 L.push('-- budget');
 BUDGET.forEach(([label, est, note], i) => {
-  L.push(`insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, ${q(label)}, ${n(est)}, ${q(note)}, ${i} from _trip;`);
+  L.push(`insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select id, ${q(label)}, ${n(est)}, ${q(note)}, ${i} ${FROM_TRIP};`);
 });
 L.push('');
 
@@ -149,12 +151,9 @@ L.push('-- packing');
 let pi = 0;
 for (const [group, items] of Object.entries(PACKING)) {
   for (const item of items) {
-    L.push(`insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, ${q(group)}, ${q(item)}, ${pi++} from _trip;`);
+    L.push(`insert into public.packing_items (trip_id, group_name, label, sort_order) select id, ${q(group)}, ${q(item)}, ${pi++} ${FROM_TRIP};`);
   }
 }
-L.push('');
-L.push('drop table _trip;');
-L.push('commit;');
 L.push('');
 
 mkdirSync(join(root, 'supabase'), { recursive: true });
