@@ -1,13 +1,14 @@
-﻿-- ===========================================================================
+-- ===========================================================================
 -- SHUGON : RUN THIS ONE FILE.
 --
 -- Combines, in the required order:
---   002_shugon_schema.sql   tables, security rules, bookings view
---   003_seed_cyprus_dolomites.sql   your existing trip as data
---   004_storage.sql         file buckets for photos, GPX, receipts
+--   002_shugon_schema.sql            tables, security rules, bookings view
+--   003_seed_cyprus_dolomites.sql    your existing trip as data
+--   004_storage.sql                  file buckets for photos, GPX, receipts
 --
--- GENERATED - do not hand-edit. Re-create with:
---   Get-Content 002_*.sql,003_*.sql,004_*.sql | Set-Content RUN_THIS.sql
+-- GENERATED - do not hand-edit.
+-- Written WITHOUT a byte-order mark: a BOM is an invisible character that
+-- Postgres reports as `syntax error at or near ""` on line 1.
 --
 -- Safe to run more than once. Does not touch the old trip_state /
 -- trip_notes / trip_activity tables, so the current live site keeps working.
