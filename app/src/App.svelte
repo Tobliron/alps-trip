@@ -8,6 +8,7 @@
   import ActivityEditor from './lib/ActivityEditor.svelte';
   import DataPanel from './lib/DataPanel.svelte';
   import TripMap from './lib/TripMap.svelte';
+  import Dashboard from './lib/Dashboard.svelte';
 
   let editor = $state(null);
   const openEditor = (activity) => editor?.open(activity);
@@ -80,9 +81,23 @@
         <b>{countdown}</b> {countdown === 1 ? 'day' : 'days'} until the trip
       </div>
     {:else if todayRow}
+      <!-- A summary, not a second DayCard: rendering the same day twice would
+           put two drag zones over the same activity ids and break both the
+           keyed list and drag-and-drop. -->
       <div class="countdown live">
-        <b>Today</b> · {todayRow.title ?? 'no plan yet'}
-        <button class="linkish" onclick={goToday}>jump to today</button>
+        <div>
+          <b>Today</b> · {new Date(todayRow.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {#if todayRow.title} — {todayRow.title}{/if}
+        </div>
+        {#if todayRow.base_location}<div class="sleep mono">sleeping · {todayRow.base_location}</div>{/if}
+        {#if (todayRow.activities ?? []).length}
+          <ul class="today-list">
+            {#each todayRow.activities as a (a.id)}
+              <li>{a.start_time ? a.start_time.slice(0, 5) + ' · ' : ''}{a.title}</li>
+            {/each}
+          </ul>
+        {/if}
+        <button class="linkish" onclick={goToday}>open today below</button>
       </div>
     {/if}
 
@@ -91,6 +106,7 @@
     {/each}
 
     <Backlog onedit={openEditor} />
+    <Dashboard />
     <TripMap />
     <DataPanel />
   {/if}
@@ -122,7 +138,10 @@
   .countdown b { color: var(--glow); font-size: 17px; }
   .countdown.live { background: #E2EDE8; border-color: #BBD2C8; }
   .countdown.live b { color: var(--pine); }
-  .countdown .linkish { margin-inline-start: 10px; font-size: 13px; }
+  .countdown .linkish { margin-inline-start: 0; font-size: 13px; margin-top: 6px; display: inline-block; }
+  .sleep { font-size: 11.5px; color: var(--rock-soft); margin-top: 4px; }
+  .today-list { margin: 8px 0 0 18px; font-size: 13.5px; }
+  .today-list li { margin-bottom: 2px; }
 
   .backlog-title { margin-top: 26px; }
   code { font-family: var(--font-mono); font-size: 12px; background: var(--ice); padding: 1px 5px; border-radius: 4px; }
