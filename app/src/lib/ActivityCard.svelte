@@ -1,7 +1,13 @@
 <script>
   import { app } from './state.svelte.js';
 
+  import FileStrip from './FileStrip.svelte';
+
   let { activity, onedit } = $props();
+
+  let hasFiles = $derived(
+    (app.bundle?.files ?? []).some(f => f.activity_id === activity.id)
+  );
 
   const KIND_LABEL = {
     hike: 'Hike', flight: 'Flight', plan: 'Plan', holiday: 'Holiday',
@@ -51,6 +57,12 @@
 
   {#if activity.notes}
     <p class="notes">{activity.notes}</p>
+  {/if}
+
+  <!-- read-only here; uploading happens in the editor, so a drag does not
+       collide with a file picker -->
+  {#if hasFiles}
+    <FileStrip activityId={activity.id} kinds={['photo', 'gpx', 'receipt']} compact />
   {/if}
 
   {#if app.editing}

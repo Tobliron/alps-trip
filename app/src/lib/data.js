@@ -46,7 +46,7 @@ export async function fetchTrips() {
  * matters on a slow connection far more than it does on wifi.
  */
 export async function fetchTripBundle(tripId) {
-  const [days, unscheduled, budget, packing, people, notes] = await Promise.all([
+  const [days, unscheduled, budget, packing, people, notes, files] = await Promise.all([
     supabase.from('days')
       .select('*, activities(*)')
       .eq('trip_id', tripId)
@@ -56,10 +56,11 @@ export async function fetchTripBundle(tripId) {
     supabase.from('budget_items').select('*').eq('trip_id', tripId).order('sort_order'),
     supabase.from('packing_items').select('*').eq('trip_id', tripId).order('sort_order'),
     supabase.from('people').select('*').eq('trip_id', tripId).order('sort_order'),
-    supabase.from('trip_notes_v2').select('*').eq('trip_id', tripId).order('created_at', { ascending: false })
+    supabase.from('trip_notes_v2').select('*').eq('trip_id', tripId).order('created_at', { ascending: false }),
+    supabase.from('files').select('*').eq('trip_id', tripId).order('created_at')
   ]);
 
-  for (const r of [days, unscheduled, budget, packing, people, notes]) {
+  for (const r of [days, unscheduled, budget, packing, people, notes, files]) {
     if (r.error) throw r.error;
   }
   return {
@@ -68,7 +69,8 @@ export async function fetchTripBundle(tripId) {
     budget: budget.data,
     packing: packing.data,
     people: people.data,
-    notes: notes.data
+    notes: notes.data,
+    files: files.data
   };
 }
 

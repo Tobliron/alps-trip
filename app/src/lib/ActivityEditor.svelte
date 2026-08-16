@@ -1,6 +1,7 @@
 <script>
   import { app } from './state.svelte.js';
   import { saveActivity, removeActivity } from './actions.svelte.js';
+  import FileStrip from './FileStrip.svelte';
 
   let dialog = $state(null);
   let draft = $state(null);      // a copy — edits only land on save
@@ -175,6 +176,15 @@
         {/if}
       </fieldset>
 
+      <fieldset>
+        <legend>Files</legend>
+        <p class="fine">
+          Photos and GPX are public. Confirmations go in the private bucket and open
+          through a short-lived link — put anything with a name or a card number there.
+        </p>
+        <FileStrip activityId={draft.id} kinds={['photo', 'gpx', 'receipt']} compact />
+      </fieldset>
+
       {#if error}<div class="error">{error}</div>{/if}
 
       <div class="modal-actions">
@@ -198,6 +208,7 @@
   legend .inline { display: flex; align-items: center; gap: 7px; cursor: pointer; }
   legend input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--pine); }
   .spacer { flex: 1; }
+  .fine { font-size: 12px; color: var(--rock-soft); margin-bottom: 6px; }
   .danger { color: var(--glow); }
   .danger:hover { background: var(--glow-soft); }
   @media (max-width: 640px) { .editor { max-width: 100vw; width: 100vw; max-height: 100vh; border-radius: 0; } }

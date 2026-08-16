@@ -2,6 +2,7 @@
   import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import ActivityCard from './ActivityCard.svelte';
+  import FileStrip from './FileStrip.svelte';
   import { app } from './state.svelte.js';
   import { commitMove, addActivity, saveDay } from './actions.svelte.js';
 
@@ -106,6 +107,10 @@
 
   {#if !items.length && !app.editing}
     <p class="empty">Nothing planned yet.</p>
+  {/if}
+
+  {#if day.id}
+    <FileStrip dayId={day.id} kinds={['photo']} />
   {/if}
 
   {#if app.editing && day.id}
