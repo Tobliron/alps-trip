@@ -23,6 +23,13 @@ export const SUPABASE_ANON_KEY =
  */
 export const EDITOR_EMAIL = 'editor@shugon.app';
 
+/**
+ * Who can be picked as an author. Self-declared, not authenticated — it labels
+ * changes in the log, it does not grant anything. Editing rights come from the
+ * shared password, which is a separate question from "which of us are you".
+ */
+export const PEOPLE = ['Liron', 'Sagi', 'Buza'];
+
 export const APP_NAME = 'Shugon';
 export const APP_TAGLINE = 'Trip Planning';
 

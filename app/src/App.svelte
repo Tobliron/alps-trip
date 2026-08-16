@@ -4,6 +4,11 @@
   import { APP_NAME, APP_TAGLINE } from './lib/config.js';
   import EditButton from './lib/EditButton.svelte';
   import DayCard from './lib/DayCard.svelte';
+  import Backlog from './lib/Backlog.svelte';
+  import ActivityEditor from './lib/ActivityEditor.svelte';
+
+  let editor = $state(null);
+  const openEditor = (activity) => editor?.open(activity);
 
   onMount(boot);
 
@@ -80,22 +85,14 @@
     {/if}
 
     {#each days() as d (d.id)}
-      <DayCard day={d} isToday={todayRow?.id === d.id} />
+      <DayCard day={d} isToday={todayRow?.id === d.id} onedit={openEditor} />
     {/each}
 
-    {#if app.bundle?.unscheduled?.length}
-      <h2 class="backlog-title">Not yet on a day</h2>
-      <p class="muted" style="margin-bottom:12px;font-size:13.5px">
-        Bookings and to-dos without a date. Unlock editing to drag them onto a day.
-      </p>
-      <div class="backlog">
-        {#each app.bundle.unscheduled as a (a.id)}
-          <DayCard day={{ id: a.id, date: '', activities: [a] }} />
-        {/each}
-      </div>
-    {/if}
+    <Backlog onedit={openEditor} />
   {/if}
 </main>
+
+<ActivityEditor bind:this={editor} />
 
 <style>
   .top { background: var(--pine-deep); color: var(--ice); padding: 14px 16px 18px; }

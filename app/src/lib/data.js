@@ -97,10 +97,25 @@ export async function deleteActivity(id) {
   if (error) throw error;
 }
 
-/** Drag-and-drop writes this: new day and position for a batch of activities. */
+/**
+ * Drag-and-drop writes this: new day and position for a batch of activities.
+ *
+ * Deliberately N targeted updates rather than one bulk upsert. PostgREST
+ * implements upsert as INSERT ... ON CONFLICT DO UPDATE, so it demands every
+ * NOT NULL column in the payload — a reorder that sends only {id, day_id,
+ * sort_order} fails with `null value in column "title"`. Sending the whole row
+ * instead would work but would also stamp our copy of every other field over
+ * whatever someone else just edited. Updating only the two columns a drag
+ * actually changes is both correct and safer against concurrent edits.
+ */
 export async function reorderActivities(rows) {
-  const { error } = await supabase.from('activities').upsert(rows, { onConflict: 'id' });
-  if (error) throw error;
+  const results = await Promise.all(rows.map(r =>
+    supabase.from('activities')
+      .update({ day_id: r.day_id, sort_order: r.sort_order })
+      .eq('id', r.id)
+  ));
+  const failed = results.find(r => r.error);
+  if (failed) throw failed.error;
 }
 
 export async function logChange(tripId, author, action, entity, entityId) {

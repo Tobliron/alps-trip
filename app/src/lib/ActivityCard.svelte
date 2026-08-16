@@ -1,7 +1,7 @@
 <script>
   import { app } from './state.svelte.js';
 
-  let { activity } = $props();
+  let { activity, onedit } = $props();
 
   const KIND_LABEL = {
     hike: 'Hike', flight: 'Flight', plan: 'Plan', holiday: 'Holiday',
@@ -55,7 +55,8 @@
 
   {#if app.editing}
     <div class="edit-row">
-      <button class="linkish">edit</button>
+      <span class="grip mono" aria-hidden="true">⠿ drag</span>
+      <button class="linkish" onclick={() => onedit?.(activity)}>edit</button>
     </div>
   {/if}
 </article>
@@ -74,5 +75,9 @@
   .booking-line a { color: var(--pine); }
   .due { font-size: 11px; color: var(--glow); }
   .notes { font-size: 13px; color: var(--rock-soft); margin-top: 7px; white-space: pre-wrap; }
-  .edit-row { margin-top: 8px; font-size: 12.5px; }
+  .edit-row { margin-top: 8px; font-size: 12.5px; display: flex; align-items: center; gap: 12px; }
+  .grip { font-size: 11px; color: var(--rock-soft); cursor: grab; }
+  /* While editing the whole card is a drag handle, so make that legible. */
+  :global(.acts.dropzone) .act { cursor: grab; }
+  :global(.acts.dropzone) .act:active { cursor: grabbing; }
 </style>
