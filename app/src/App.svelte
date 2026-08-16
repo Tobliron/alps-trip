@@ -7,6 +7,7 @@
   import Backlog from './lib/Backlog.svelte';
   import ActivityEditor from './lib/ActivityEditor.svelte';
   import DataPanel from './lib/DataPanel.svelte';
+  import TripMap from './lib/TripMap.svelte';
 
   let editor = $state(null);
   const openEditor = (activity) => editor?.open(activity);
@@ -90,6 +91,7 @@
     {/each}
 
     <Backlog onedit={openEditor} />
+    <TripMap />
     <DataPanel />
   {/if}
 </main>

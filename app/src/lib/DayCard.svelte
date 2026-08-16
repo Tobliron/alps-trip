@@ -3,6 +3,8 @@
   import { flip } from 'svelte/animate';
   import ActivityCard from './ActivityCard.svelte';
   import FileStrip from './FileStrip.svelte';
+  import DayLocation from './DayLocation.svelte';
+  import DayWeather from './DayWeather.svelte';
   import { app } from './state.svelte.js';
   import { commitMove, addActivity, saveDay } from './actions.svelte.js';
 
@@ -84,6 +86,11 @@
   {/if}
 
   {#if day.base_location}<div class="base mono">sleeping · {day.base_location}</div>{/if}
+
+  {#if day.id}
+    <DayWeather {day} />
+    {#if app.editing}<DayLocation {day} />{/if}
+  {/if}
 
   <div
     class="acts"

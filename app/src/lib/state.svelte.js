@@ -1,5 +1,6 @@
 import { fetchTrips, fetchTripBundle, cacheGet, cacheSet } from './data.js';
 import { currentSession, onAuthChange } from './supabase.js';
+import { fetchForecast, forecastAvailable } from './geo.js';
 import { NS } from './config.js';
 
 /**
@@ -104,6 +105,10 @@ export async function boot() {
   } finally {
     app.loading = false;
   }
+
+  // Weather last: it is the least important thing on the page and depends on a
+  // third party, so nothing else should wait on it.
+  refreshWeather();
 }
 
 export async function loadTrip(id) {
@@ -124,4 +129,39 @@ export async function loadTrip(id) {
 
 export async function refresh() {
   if (app.tripId) await loadTrip(app.tripId);
+}
+
+/**
+ * Fetch forecasts for every located day that is close enough to have one.
+ *
+ * Grouped by coordinate and requested as a date range, so a 24-day trip with
+ * five bases costs five requests rather than twenty-four. Results are held in
+ * the local cache only — showing the weather should not require the edit
+ * password, and a forecast is disposable by nature.
+ */
+export async function refreshWeather() {
+  const wanted = days().filter(d => d.lat != null && d.lon != null && forecastAvailable(d.date));
+  if (!wanted.length) return;
+
+  const groups = new Map();
+  for (const d of wanted) {
+    const key = `${Number(d.lat).toFixed(2)},${Number(d.lon).toFixed(2)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(d);
+  }
+
+  for (const [key, group] of groups) {
+    const [lat, lon] = key.split(',').map(Number);
+    const dates = group.map(d => d.date).sort();
+    try {
+      const byDate = await fetchForecast(lat, lon, dates[0], dates[dates.length - 1]);
+      const fetched_at = new Date().toISOString();
+      for (const d of group) {
+        if (byDate[d.date]) d.weather_cache = { data: byDate[d.date], fetched_at };
+      }
+    } catch (e) {
+      console.error('could not fetch the forecast for', key, e);
+    }
+  }
+  if (app.tripId && app.bundle) cacheSet('bundle:' + app.tripId, app.bundle);
 }

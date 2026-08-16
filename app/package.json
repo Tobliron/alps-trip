@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "leaflet": "^1.9.4",
     "svelte-dnd-action": "^0.9.78"
   }
 }
