@@ -6,6 +6,7 @@
   import DayCard from './lib/DayCard.svelte';
   import Backlog from './lib/Backlog.svelte';
   import ActivityEditor from './lib/ActivityEditor.svelte';
+  import DataPanel from './lib/DataPanel.svelte';
 
   let editor = $state(null);
   const openEditor = (activity) => editor?.open(activity);
@@ -89,6 +90,7 @@
     {/each}
 
     <Backlog onedit={openEditor} />
+    <DataPanel />
   {/if}
 </main>
 
