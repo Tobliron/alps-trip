@@ -1,7 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { app, trip, days, today, daysUntilStart, boot, loadTrip } from './lib/state.svelte.js';
-  import { APP_NAME, APP_TAGLINE } from './lib/config.js';
+  import { APP_NAME } from './lib/config.js';
+  import { t, fmtDate, applyDirection } from './lib/i18n.svelte.js';
+  import LangToggle from './lib/LangToggle.svelte';
   import EditButton from './lib/EditButton.svelte';
   import DayCard from './lib/DayCard.svelte';
   import Backlog from './lib/Backlog.svelte';
@@ -13,7 +15,7 @@
   let editor = $state(null);
   const openEditor = (activity) => editor?.open(activity);
 
-  onMount(boot);
+  onMount(() => { applyDirection(); boot(); });
 
   let todayRow = $derived(today());
   let countdown = $derived(daysUntilStart());
@@ -27,11 +29,12 @@
   <div class="inner">
     <div class="brand">
       <span class="name">{APP_NAME}</span>
-      <span class="tagline mono">{APP_TAGLINE}</span>
+      <span class="tagline mono">{t('app.tagline')}</span>
     </div>
 
     <div class="right">
-      {#if app.offline}<span class="pill warn">offline — cached copy</span>{/if}
+      {#if app.offline}<span class="pill warn">{t('app.offline')}</span>{/if}
+      <LangToggle />
       <EditButton />
     </div>
   </div>
@@ -54,31 +57,28 @@
 
 <main>
   {#if app.loading}
-    <p class="muted">Loading…</p>
+    <p class="muted">{t('app.loading')}</p>
 
   {:else if app.error}
     <div class="card">
-      <h3>Couldn't load the trip</h3>
+      <h3>{t('app.error.title')}</h3>
       <p class="muted" style="margin-top:6px">{app.error}</p>
-      <p class="muted" style="margin-top:10px;font-size:13px">
-        If the database migrations haven't been run yet, run
-        <code>supabase/002_shugon_schema.sql</code> and
-        <code>supabase/003_seed_cyprus_dolomites.sql</code> in the Supabase SQL editor.
-      </p>
+      <p class="muted" style="margin-top:10px;font-size:13px">{t('app.error.hint')}</p>
     </div>
 
   {:else if !app.trips.length}
     <div class="card">
-      <h3>No trips yet</h3>
-      <p class="muted" style="margin-top:6px">
-        Run the seed migration, or unlock editing to create one.
-      </p>
+      <h3>{t('app.noTrips.title')}</h3>
+      <p class="muted" style="margin-top:6px">{t('app.noTrips.body')}</p>
     </div>
 
   {:else}
     {#if countdown !== null && countdown > 0}
+      <!-- @html is safe here and only here: the only interpolated value is
+           Number(countdown), a computed integer, never anything user-typed. -->
       <div class="countdown">
-        <b>{countdown}</b> {countdown === 1 ? 'day' : 'days'} until the trip
+        {@html t(countdown === 1 ? 'app.countdown.one' : 'app.countdown',
+                 { n: `<b>${Number(countdown)}</b>` })}
       </div>
     {:else if todayRow}
       <!-- A summary, not a second DayCard: rendering the same day twice would
@@ -86,10 +86,12 @@
            keyed list and drag-and-drop. -->
       <div class="countdown live">
         <div>
-          <b>Today</b> · {new Date(todayRow.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <b>{t('app.today')}</b> · {fmtDate(todayRow.date, { weekday: 'long', day: 'numeric', month: 'long' })}
           {#if todayRow.title} — {todayRow.title}{/if}
         </div>
-        {#if todayRow.base_location}<div class="sleep mono">sleeping · {todayRow.base_location}</div>{/if}
+        {#if todayRow.base_location}
+          <div class="sleep mono">{t('app.sleeping')} · {todayRow.base_location}</div>
+        {/if}
         {#if (todayRow.activities ?? []).length}
           <ul class="today-list">
             {#each todayRow.activities as a (a.id)}
@@ -97,7 +99,7 @@
             {/each}
           </ul>
         {/if}
-        <button class="linkish" onclick={goToday}>open today below</button>
+        <button class="linkish" onclick={goToday}>{t('app.today.open')}</button>
       </div>
     {/if}
 

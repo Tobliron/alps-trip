@@ -4,6 +4,7 @@
   import 'leaflet/dist/leaflet.css';
   import { app, days } from './state.svelte.js';
   import { publicUrl } from './storage.js';
+  import { t } from './i18n.svelte.js';
 
   let el = $state(null);
   let map = null;
@@ -87,8 +88,8 @@
 
     if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.2));
     status = located.length
-      ? `${located.length} of ${days().length} days placed`
-      : 'No days have coordinates yet — set one on a day to put it on the map.';
+      ? t('map.placed', { n: located.length, total: days().length })
+      : t('map.none');
   }
 
   /** Minimal GPX reader: track and route points are all we draw. */
@@ -105,7 +106,7 @@
 </script>
 
 <section class="map-section">
-  <h2>Map</h2>
+  <h2>{t('map.title')}</h2>
   <p class="sub">{status}</p>
   <div class="map" bind:this={el}></div>
 </section>

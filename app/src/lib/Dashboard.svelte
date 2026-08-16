@@ -1,5 +1,6 @@
 <script>
   import { app, days, today, daysUntilStart, trip } from './state.svelte.js';
+  import { t, fmtNumber } from './i18n.svelte.js';
 
   /**
    * The numbers worth knowing at a glance. Everything is derived from data
@@ -35,68 +36,66 @@
 </script>
 
 <section class="dash">
-  <h2>Dashboard</h2>
+  <h2>{t('dash.title')}</h2>
 
   <div class="tiles">
     <div class="tile">
       <span class="n">{all.length}</span>
-      <span class="l">days</span>
-      <span class="s">{emptyDays ? `${emptyDays} with nothing planned` : 'all have something planned'}</span>
+      <span class="l">{t('dash.days')}</span>
+      <span class="s">{emptyDays ? t('dash.daysEmpty', { n: emptyDays }) : t('dash.daysAllPlanned')}</span>
     </div>
 
     <div class="tile">
       <span class="n">{booked.length}<span class="of">/{allBookings.length}</span></span>
-      <span class="l">booked</span>
+      <span class="l">{t('dash.booked')}</span>
       <span class="s" class:warn={booked.length < allBookings.length}>
-        {allBookings.length - booked.length} still outstanding
+        {t('dash.outstanding', { n: allBookings.length - booked.length })}
       </span>
     </div>
 
     <div class="tile">
       {#if withDistance.length}
         <span class="n">{km.toFixed(0)}<span class="of">km</span></span>
-        <span class="l">on foot</span>
-        <span class="s">from {withDistance.length} of {acts.length} activities</span>
+        <span class="l">{t('dash.onFoot')}</span>
+        <span class="s">{t('dash.fromN', { a: withDistance.length, b: acts.length })}</span>
       {:else}
         <span class="n dim">—</span>
-        <span class="l">on foot</span>
-        <span class="s">no distances filled in yet</span>
+        <span class="l">{t('dash.onFoot')}</span>
+        <span class="s">{t('dash.noDistances')}</span>
       {/if}
     </div>
 
     <div class="tile">
       {#if withAscent.length}
-        <span class="n">{up.toLocaleString()}<span class="of">m</span></span>
-        <span class="l">ascent</span>
-        <span class="s">from {withAscent.length} of {acts.length} activities</span>
+        <span class="n">{fmtNumber(up)}<span class="of">m</span></span>
+        <span class="l">{t('dash.ascent')}</span>
+        <span class="s">{t('dash.fromN', { a: withAscent.length, b: acts.length })}</span>
       {:else}
         <span class="n dim">—</span>
-        <span class="l">ascent</span>
-        <span class="s">no ascent filled in yet</span>
+        <span class="l">{t('dash.ascent')}</span>
+        <span class="s">{t('dash.noAscent')}</span>
       {/if}
     </div>
 
     <div class="tile">
-      <span class="n">€{est.toLocaleString()}</span>
-      <span class="l">budget pp</span>
-      <span class="s">
-        {#if anyActual}spent €{actual.toLocaleString()} so far{:else}nothing recorded as spent{/if}
-      </span>
+      <span class="n">€{fmtNumber(est)}</span>
+      <span class="l">{t('dash.budget')}</span>
+      <span class="s">{anyActual ? t('dash.spent', { n: fmtNumber(actual) }) : t('dash.noSpend')}</span>
     </div>
 
     <div class="tile">
       <span class="n">{located}<span class="of">/{all.length}</span></span>
-      <span class="l">on the map</span>
-      <span class="s">{photos} photo{photos === 1 ? '' : 's'} uploaded</span>
+      <span class="l">{t('dash.onMap')}</span>
+      <span class="s">{t('dash.photos', { n: photos })}</span>
     </div>
   </div>
 
   {#if countdown !== null && countdown > 0}
     <p class="line">
-      <b>{countdown}</b> days until {trip.current?.title}. {unscheduled.length} thing{unscheduled.length === 1 ? '' : 's'} still to schedule.
+      {t('dash.untilLine', { n: countdown, trip: trip.current?.title ?? '', m: unscheduled.length })}
     </p>
   {:else if todayRow}
-    <p class="line live"><b>Today:</b> {todayRow.title ?? 'nothing planned'}</p>
+    <p class="line live"><b>{t('app.today')}:</b> {todayRow.title ?? ''}</p>
   {/if}
 </section>
 

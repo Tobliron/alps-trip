@@ -4,6 +4,7 @@
   import ActivityCard from './ActivityCard.svelte';
   import { app } from './state.svelte.js';
   import { commitMove, addActivity } from './actions.svelte.js';
+  import { t } from './i18n.svelte.js';
 
   let { onedit } = $props();
 
@@ -25,15 +26,8 @@
 </script>
 
 <section class="backlog">
-  <h2>Not yet on a day</h2>
-  <p class="sub">
-    Bookings and to-dos without a date.
-    {#if app.editing}
-      Drag one onto a day to schedule it.
-    {:else}
-      Unlock editing to drag them onto days.
-    {/if}
-  </p>
+  <h2>{t('backlog.title')}</h2>
+  <p class="sub">{app.editing ? t('backlog.hintEditing') : t('backlog.hintLocked')}</p>
 
   <div
     class="acts"
@@ -50,11 +44,11 @@
   </div>
 
   {#if !items.length}
-    <p class="empty">Nothing outstanding — everything is on a day.</p>
+    <p class="empty">{t('backlog.empty')}</p>
   {/if}
 
   {#if app.editing}
-    <button class="btn ghost sm" onclick={add}>+ Add to backlog</button>
+    <button class="btn ghost sm" onclick={add}>{t('backlog.add')}</button>
   {/if}
 </section>
 

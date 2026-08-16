@@ -1,6 +1,7 @@
 <script>
   import { geocode } from './geo.js';
   import { saveDay } from './actions.svelte.js';
+  import { t } from './i18n.svelte.js';
 
   let { day } = $props();
 
@@ -17,7 +18,7 @@
     try {
       const results = await geocode(query || day.base_location || day.title || '');
       candidates = results;
-      if (!results.length) error = 'Nothing found for that name — try a nearby town.';
+      if (!results.length) error = t('loc.none');
     } catch (e) {
       console.error('geocode failed', e);
       error = e.message;
@@ -41,21 +42,18 @@
 
 <div class="loc">
   <button class="linkish" onclick={() => { open = !open; query = day.base_location ?? ''; }}>
-    {placed ? `📍 ${Number(day.lat).toFixed(3)}, ${Number(day.lon).toFixed(3)}` : '📍 set location'}
+    {placed ? `📍 ${Number(day.lat).toFixed(3)}, ${Number(day.lon).toFixed(3)}` : '📍 ' + t('loc.set')}
   </button>
   {#if placed}
-    <button class="linkish dim" onclick={clear} disabled={busy}>clear</button>
+    <button class="linkish dim" onclick={clear} disabled={busy}>{t('loc.clear')}</button>
   {/if}
 
   {#if open}
     <div class="panel">
-      <p class="fine">
-        Used for the map and the weather forecast. Nothing is guessed — pick the right
-        match, or leave it empty.
-      </p>
+      <p class="fine">{t('loc.blurb')}</p>
       <div class="find">
-        <input bind:value={query} placeholder="place name" onkeydown={(e) => e.key === 'Enter' && look()} />
-        <button class="btn sm" onclick={look} disabled={busy}>{busy ? '…' : 'Look up'}</button>
+        <input bind:value={query} placeholder={t('loc.placeholder')} onkeydown={(e) => e.key === 'Enter' && look()} />
+        <button class="btn sm" onclick={look} disabled={busy}>{busy ? '…' : t('loc.lookup')}</button>
       </div>
       {#if error}<p class="err">{error}</p>{/if}
       {#each candidates as c}

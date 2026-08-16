@@ -1,6 +1,7 @@
 <script>
   import { app, trip, loadTrip } from './state.svelte.js';
   import { exportTrip, importTrip, download, validate, comparable, cloneWithNewIds, deleteTrip } from './portable.js';
+  import { t } from './i18n.svelte.js';
 
   let busy = $state('');
   let message = $state('');
@@ -106,30 +107,27 @@
 </script>
 
 <section class="data">
-  <h2>Backup</h2>
-  <p class="sub">
-    A copy of this trip as one JSON file. It mirrors the database exactly, so importing it
-    restores the trip rather than duplicating it.
-  </p>
+  <h2>{t('data.title')}</h2>
+  <p class="sub">{t('data.blurb')}</p>
 
   <div class="row">
     <button class="btn ghost" onclick={doExport} disabled={!!busy}>
-      {busy === 'export' ? 'Exporting…' : '⬇ Export trip JSON'}
+      {busy === 'export' ? t('data.exporting') : t('data.export')}
     </button>
 
     {#if app.editing}
       <button class="btn ghost" onclick={() => fileInput.click()} disabled={!!busy}>
-        {busy === 'import' ? 'Importing…' : '⬆ Restore from file'}
+        {busy === 'import' ? t('data.importing') : t('data.import')}
       </button>
       <button class="btn ghost" onclick={roundTrip} disabled={!!busy}>
-        {busy === 'check' ? 'Checking…' : 'Verify round-trip'}
+        {busy === 'check' ? t('data.verifying') : t('data.verify')}
       </button>
     {/if}
     <input type="file" accept="application/json,.json" bind:this={fileInput} onchange={doImport} hidden />
   </div>
 
   {#if !app.editing}
-    <p class="hint">Unlock editing to restore from a file.</p>
+    <p class="hint">{t('data.lockedHint')}</p>
   {/if}
   {#if message}<p class="ok">{message}</p>{/if}
   {#if problem}<pre class="bad">{problem}</pre>{/if}

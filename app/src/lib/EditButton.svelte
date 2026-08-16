@@ -2,6 +2,7 @@
   import { app, setWho } from './state.svelte.js';
   import { unlockEditing, lockEditing } from './supabase.js';
   import { PEOPLE } from './config.js';
+  import { t } from './i18n.svelte.js';
 
   let dialog = $state(null);
   let password = $state('');
@@ -18,7 +19,7 @@
   async function submit(e) {
     e.preventDefault();
     if (!password || busy) return;
-    if (!who.trim()) { error = 'Pick who you are, so changes show who made them.'; return; }
+    if (!who.trim()) { error = t('edit.whoRequired'); return; }
     busy = true; error = '';
     const res = await unlockEditing(password);
     busy = false;
@@ -50,40 +51,38 @@
   class="edit-btn"
   class:on={app.editing}
   onclick={click}
-  title={app.editing ? 'Editing is on — click to lock' : 'Unlock editing with the group password'}
+  title={app.editing ? t('edit.tipUnlocked') : t('edit.tipLocked')}
 >
   {#if app.editing}
-    <span aria-hidden="true">✓</span> Editing · Done
+    <span aria-hidden="true">✓</span> {t('edit.unlocked')}
   {:else}
-    <span aria-hidden="true">🔒</span> Edit
+    <span aria-hidden="true">🔒</span> {t('edit.locked')}
   {/if}
 </button>
 
 <dialog bind:this={dialog}>
   <form class="modal-in" onsubmit={submit}>
-    <h3>Unlock editing</h3>
-    <p class="muted" style="font-size:13.5px;margin:6px 0 14px">
-      Everyone can read the trip. Changing it needs the group password.
-    </p>
+    <h3>{t('edit.title')}</h3>
+    <p class="muted" style="font-size:13.5px;margin:6px 0 14px">{t('edit.blurb')}</p>
     <div class="field">
-      <span class="lbl">Who are you?</span>
+      <span class="lbl">{t('edit.who')}</span>
       <div class="who-row">
         {#each PEOPLE as p}
           <button type="button" class="who-chip" class:on={who === p} onclick={() => who = p}>{p}</button>
         {/each}
-        <input class="who-other" bind:value={who} maxlength="40" placeholder="or type a name" />
+        <input class="who-other" bind:value={who} maxlength="40" placeholder={t('edit.whoOther')} />
       </div>
     </div>
     <div class="field">
-      <label for="pw">Group password</label>
+      <label for="pw">{t('edit.password')}</label>
       <!-- svelte-ignore a11y_autofocus -->
       <input id="pw" type="password" bind:value={password} autocomplete="current-password" autofocus />
     </div>
     {#if error}<div class="error">{error}</div>{/if}
     <div class="modal-actions">
-      <button type="button" class="btn ghost" onclick={() => dialog.close()}>Cancel</button>
+      <button type="button" class="btn ghost" onclick={() => dialog.close()}>{t('edit.cancel')}</button>
       <button type="submit" class="btn" disabled={busy || !password}>
-        {busy ? 'Checking…' : 'Unlock'}
+        {busy ? t('edit.checking') : t('edit.unlock')}
       </button>
     </div>
   </form>

@@ -2,6 +2,7 @@
   import { app } from './state.svelte.js';
   import { trip } from './state.svelte.js';
   import { uploadFile, removeFile, publicUrl, signedUrl, prettyBytes } from './storage.js';
+  import { t } from './i18n.svelte.js';
 
   /**
    * Photos, GPX and confirmations for one day or one activity.
@@ -25,7 +26,7 @@
     })
   );
 
-  const LABEL = { photo: 'Photo', gpx: 'GPX track', receipt: 'Confirmation', doc: 'Document' };
+  const label = (k) => t('files.' + k);
 
   function choose(kind) {
     uploadKind = kind;
@@ -86,7 +87,7 @@
       </figure>
     {:else}
       <div class="doc">
-        <span class="tag mono">{LABEL[f.kind] ?? f.kind}</span>
+        <span class="tag">{label(f.kind)}</span>
         {#if f.bucket === 'trip-docs'}
           <button class="linkish" onclick={() => openPrivate(f)}>{f.filename}</button>
         {:else}
@@ -101,14 +102,14 @@
   {#if app.editing}
     {#each kinds as k}
       <button class="add" onclick={() => choose(k)} disabled={!!pending}>
-        + {LABEL[k] ?? k}
+        + {label(k)}
       </button>
     {/each}
     <input type="file" multiple bind:this={input} onchange={onPick} hidden />
   {/if}
 </div>
 
-{#if pending}<p class="note mono">uploading {pending}…</p>{/if}
+{#if pending}<p class="note">{t('files.uploading', { name: pending })}</p>{/if}
 {#if error}<p class="err">{error}</p>{/if}
 
 <style>

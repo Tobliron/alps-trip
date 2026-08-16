@@ -1,6 +1,7 @@
 <script>
   import { app } from './state.svelte.js';
   import { forecastAvailable, daysAhead, describeWeather, FORECAST_HORIZON_DAYS } from './geo.js';
+  import { t, locale } from './i18n.svelte.js';
 
   let { day } = $props();
 
@@ -27,10 +28,12 @@
 {:else if placed && !inRange && ahead > FORECAST_HORIZON_DAYS}
   <!-- Saying "no forecast" would read as a failure. It is simply too early:
        free forecasts only reach 16 days out. -->
-  <div class="wx muted mono">forecast from {new Date(Date.now() + (ahead - FORECAST_HORIZON_DAYS) * 86400000)
-      .toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+  <div class="wx muted">{t('wx.from', {
+    date: new Date(Date.now() + (ahead - FORECAST_HORIZON_DAYS) * 86400000)
+      .toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
+  })}</div>
 {:else if !placed && app.editing}
-  <div class="wx muted mono">no location set — no forecast</div>
+  <div class="wx muted">{t('wx.noLocation')}</div>
 {/if}
 
 <style>

@@ -2,6 +2,7 @@
   import { app } from './state.svelte.js';
 
   import FileStrip from './FileStrip.svelte';
+  import { t } from './i18n.svelte.js';
 
   let { activity, onedit } = $props();
 
@@ -9,10 +10,7 @@
     (app.bundle?.files ?? []).some(f => f.activity_id === activity.id)
   );
 
-  const KIND_LABEL = {
-    hike: 'Hike', flight: 'Flight', plan: 'Plan', holiday: 'Holiday',
-    booking: 'To book', drive: 'Drive', food: 'Food', rest: 'Rest', custom: 'Custom'
-  };
+  const KINDS = ['hike', 'flight', 'plan', 'holiday', 'booking', 'drive', 'food', 'rest', 'custom'];
 
   // Only render a stat if there is a real value. An empty seed should look
   // empty, not like a row of zeroes.
@@ -32,8 +30,8 @@
       <span class="time mono">{activity.start_time.slice(0, 5)}</span>
     {/if}
     <h4>{activity.title}</h4>
-    {#if activity.kind && KIND_LABEL[activity.kind]}
-      <span class="pill {activity.kind === 'booking' ? 'hot' : 'ok'}">{KIND_LABEL[activity.kind]}</span>
+    {#if activity.kind && KINDS.includes(activity.kind)}
+      <span class="pill {activity.kind === 'booking' ? 'hot' : 'ok'}">{t('kind.' + activity.kind)}</span>
     {/if}
   </div>
 
@@ -44,7 +42,7 @@
   {#if booking?.needed}
     <div class="booking-line">
       <span class="pill {booking.status === 'done' ? 'ok' : 'warn'}">
-        {booking.status === 'done' ? 'Booked' : 'Not booked'}
+        {booking.status === 'done' ? t('act.booked') : t('act.notBooked')}
       </span>
       {#if booking.due}<span class="due mono">{booking.due}</span>{/if}
       {#if booking.url}
@@ -67,8 +65,8 @@
 
   {#if app.editing}
     <div class="edit-row">
-      <span class="grip mono" aria-hidden="true">⠿ drag</span>
-      <button class="linkish" onclick={() => onedit?.(activity)}>edit</button>
+      <span class="grip mono" aria-hidden="true">⠿ {t('act.drag')}</span>
+      <button class="linkish" onclick={() => onedit?.(activity)}>{t('act.edit')}</button>
     </div>
   {/if}
 </article>

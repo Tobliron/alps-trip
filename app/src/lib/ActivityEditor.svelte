@@ -2,6 +2,7 @@
   import { app } from './state.svelte.js';
   import { saveActivity, removeActivity } from './actions.svelte.js';
   import FileStrip from './FileStrip.svelte';
+  import { t } from './i18n.svelte.js';
 
   let dialog = $state(null);
   let draft = $state(null);      // a copy — edits only land on save
@@ -9,7 +10,7 @@
   let error = $state('');
 
   const KINDS = ['hike', 'flight', 'drive', 'plan', 'food', 'rest', 'holiday', 'booking', 'custom'];
-  const STATUSES = [['todo', 'Not booked'], ['pending', 'Waiting on them'], ['done', 'Booked']];
+  const STATUSES = ['todo', 'pending', 'done'];
 
   export function open(activity) {
     draft = {
@@ -93,105 +94,102 @@
 <dialog bind:this={dialog} class="editor">
   {#if draft}
     <form class="modal-in" onsubmit={save}>
-      <h3>Edit activity</h3>
+      <h3>{t('editor.title')}</h3>
 
       <div class="field">
-        <label for="ae-title">Title</label>
+        <label for="ae-title">{t('editor.field.title')}</label>
         <input id="ae-title" bind:value={draft.title} maxlength="200" required />
       </div>
 
       <div class="row">
         <div class="field">
-          <label for="ae-kind">Type</label>
+          <label for="ae-kind">{t('editor.field.type')}</label>
           <select id="ae-kind" bind:value={draft.kind}>
-            {#each KINDS as k}<option value={k}>{k}</option>{/each}
+            {#each KINDS as k}<option value={k}>{t('kind.' + k)}</option>{/each}
           </select>
         </div>
         <div class="field">
-          <label for="ae-time">Start</label>
+          <label for="ae-time">{t('editor.field.start')}</label>
           <input id="ae-time" type="time" bind:value={draft.start_time} />
         </div>
         <div class="field">
-          <label for="ae-dur">Minutes</label>
+          <label for="ae-dur">{t('editor.field.minutes')}</label>
           <input id="ae-dur" type="number" min="0" bind:value={draft.duration_min} />
         </div>
       </div>
 
       <fieldset>
-        <legend>The walk</legend>
+        <legend>{t('editor.walk')}</legend>
         <div class="row">
-          <div class="field"><label for="ae-km">Distance km</label>
+          <div class="field"><label for="ae-km">{t('editor.field.km')}</label>
             <input id="ae-km" type="number" step="0.1" min="0" bind:value={draft.distance_km} /></div>
-          <div class="field"><label for="ae-up">Ascent m</label>
+          <div class="field"><label for="ae-up">{t('editor.field.ascent')}</label>
             <input id="ae-up" type="number" min="0" bind:value={draft.ascent_m} /></div>
-          <div class="field"><label for="ae-down">Descent m</label>
+          <div class="field"><label for="ae-down">{t('editor.field.descent')}</label>
             <input id="ae-down" type="number" min="0" bind:value={draft.descent_m} /></div>
         </div>
         <div class="row">
-          <div class="field"><label for="ae-diff">Difficulty</label>
-            <input id="ae-diff" bind:value={draft.difficulty} placeholder="easy / moderate / exposed" /></div>
-          <div class="field grow"><label for="ae-map">Map link</label>
+          <div class="field"><label for="ae-diff">{t('editor.field.difficulty')}</label>
+            <input id="ae-diff" bind:value={draft.difficulty} /></div>
+          <div class="field grow"><label for="ae-map">{t('editor.field.map')}</label>
             <input id="ae-map" type="url" bind:value={draft.map_url} placeholder="https://…" /></div>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Getting there</legend>
-        <div class="field"><label for="ae-th">Trailhead</label><input id="ae-th" bind:value={draft.trailhead} /></div>
-        <div class="field"><label for="ae-park">Parking</label><input id="ae-park" bind:value={draft.parking} /></div>
-        <div class="field"><label for="ae-trans">Transport</label><input id="ae-trans" bind:value={draft.transport} /></div>
+        <legend>{t('editor.getting')}</legend>
+        <div class="field"><label for="ae-th">{t('editor.field.trailhead')}</label><input id="ae-th" bind:value={draft.trailhead} /></div>
+        <div class="field"><label for="ae-park">{t('editor.field.parking')}</label><input id="ae-park" bind:value={draft.parking} /></div>
+        <div class="field"><label for="ae-trans">{t('editor.field.transport')}</label><input id="ae-trans" bind:value={draft.transport} /></div>
       </fieldset>
 
       <fieldset>
-        <legend>On the day</legend>
-        <div class="field"><label for="ae-food">Food and water</label><input id="ae-food" bind:value={draft.food_water} /></div>
-        <div class="field"><label for="ae-rain">Rain / backup plan</label><input id="ae-rain" bind:value={draft.backup_plan} /></div>
-        <div class="field"><label for="ae-notes">Notes</label><textarea id="ae-notes" rows="4" bind:value={draft.notes}></textarea></div>
+        <legend>{t('editor.onday')}</legend>
+        <div class="field"><label for="ae-food">{t('editor.field.food')}</label><input id="ae-food" bind:value={draft.food_water} /></div>
+        <div class="field"><label for="ae-rain">{t('editor.field.rain')}</label><input id="ae-rain" bind:value={draft.backup_plan} /></div>
+        <div class="field"><label for="ae-notes">{t('editor.field.notes')}</label><textarea id="ae-notes" rows="4" bind:value={draft.notes}></textarea></div>
       </fieldset>
 
       <fieldset>
         <legend>
           <label class="inline">
             <input type="checkbox" checked={!!draft.booking} onchange={toggleBooking} />
-            Needs booking or paying
+            {t('editor.booking')}
           </label>
         </legend>
         {#if draft.booking}
           <div class="row">
-            <div class="field"><label for="ae-status">Status</label>
+            <div class="field"><label for="ae-status">{t('editor.field.status')}</label>
               <select id="ae-status" bind:value={draft.booking.status}>
-                {#each STATUSES as [v, l]}<option value={v}>{l}</option>{/each}
+                {#each STATUSES as v}<option value={v}>{t('status.' + v)}</option>{/each}
               </select></div>
-            <div class="field"><label for="ae-due">Due</label>
-              <input id="ae-due" bind:value={draft.booking.due} placeholder="NOW / this week" /></div>
-            <div class="field"><label for="ae-cost">Cost</label>
+            <div class="field"><label for="ae-due">{t('editor.field.due')}</label>
+              <input id="ae-due" bind:value={draft.booking.due} /></div>
+            <div class="field"><label for="ae-cost">{t('editor.field.cost')}</label>
               <input id="ae-cost" type="number" min="0" step="0.01" bind:value={draft.booking.cost} /></div>
           </div>
           <div class="row">
-            <div class="field"><label for="ae-ref">Reference</label>
-              <input id="ae-ref" bind:value={draft.booking.ref} placeholder="confirmation number" /></div>
-            <div class="field grow"><label for="ae-url">Booking link</label>
+            <div class="field"><label for="ae-ref">{t('editor.field.ref')}</label>
+              <input id="ae-ref" bind:value={draft.booking.ref} /></div>
+            <div class="field grow"><label for="ae-url">{t('editor.field.url')}</label>
               <input id="ae-url" type="url" bind:value={draft.booking.url} /></div>
           </div>
         {/if}
       </fieldset>
 
       <fieldset>
-        <legend>Files</legend>
-        <p class="fine">
-          Photos and GPX are public. Confirmations go in the private bucket and open
-          through a short-lived link — put anything with a name or a card number there.
-        </p>
+        <legend>{t('editor.files')}</legend>
+        <p class="fine">{t('editor.filesHint')}</p>
         <FileStrip activityId={draft.id} kinds={['photo', 'gpx', 'receipt']} compact />
       </fieldset>
 
       {#if error}<div class="error">{error}</div>{/if}
 
       <div class="modal-actions">
-        <button type="button" class="btn ghost danger" onclick={destroy} disabled={saving}>Delete</button>
+        <button type="button" class="btn ghost danger" onclick={destroy} disabled={saving}>{t('editor.delete')}</button>
         <span class="spacer"></span>
-        <button type="button" class="btn ghost" onclick={() => dialog.close()} disabled={saving}>Cancel</button>
-        <button type="submit" class="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+        <button type="button" class="btn ghost" onclick={() => dialog.close()} disabled={saving}>{t('edit.cancel')}</button>
+        <button type="submit" class="btn" disabled={saving}>{saving ? t('editor.saving') : t('editor.save')}</button>
       </div>
     </form>
   {/if}

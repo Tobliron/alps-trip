@@ -7,9 +7,12 @@
   import DayWeather from './DayWeather.svelte';
   import { app } from './state.svelte.js';
   import { commitMove, addActivity, saveDay } from './actions.svelte.js';
+  import { t, fmtDate } from './i18n.svelte.js';
 
   let { day, isToday = false, onedit } = $props();
 
+  /* Place names are content, not interface — left as written in both
+     languages, the same way day titles and notes are. */
   const PHASE_LABEL = {
     cyprus: 'Cyprus', cortina: 'Cortina', huts: 'Hut trek',
     gardena: 'Val Gardena', garda: 'Lake Garda', venice: 'Venice'
@@ -17,9 +20,7 @@
   const FLIP = 160;
 
   let dateLabel = $derived(
-    day.date
-      ? new Date(day.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-      : ''
+    day.date ? fmtDate(day.date, { weekday: 'short', day: 'numeric', month: 'short' }) : ''
   );
 
   /* svelte-dnd-action owns this array while a drag is in flight, so it has to
@@ -67,7 +68,7 @@
 <section class="day" class:today={isToday} class:busy id={day.date ? 'day-' + day.date : undefined}>
   <header>
     {#if dateLabel}<span class="date mono">{dateLabel}</span>{/if}
-    {#if isToday}<span class="pill hot">Today</span>{/if}
+    {#if isToday}<span class="pill hot">{t('app.today')}</span>{/if}
     {#if day.phase && PHASE_LABEL[day.phase]}<span class="phase mono">{PHASE_LABEL[day.phase]}</span>{/if}
     {#if day.holiday}<span class="pill warn">{day.holiday}</span>{/if}
   </header>
@@ -78,14 +79,14 @@
              onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
     {:else}
       <button class="title-btn" onclick={startTitle}>
-        {day.title || 'Add a title'}
+        {day.title || t('day.addTitle')}
       </button>
     {/if}
   {:else if day.title}
     <h3>{day.title}</h3>
   {/if}
 
-  {#if day.base_location}<div class="base mono">sleeping · {day.base_location}</div>{/if}
+  {#if day.base_location}<div class="base mono">{t('app.sleeping')} · {day.base_location}</div>{/if}
 
   {#if day.id}
     <DayWeather {day} />
@@ -113,7 +114,7 @@
   </div>
 
   {#if !items.length && !app.editing}
-    <p class="empty">Nothing planned yet.</p>
+    <p class="empty">{t('day.empty')}</p>
   {/if}
 
   {#if day.id}
@@ -121,7 +122,7 @@
   {/if}
 
   {#if app.editing && day.id}
-    <button class="btn ghost sm add" onclick={add}>+ Add activity</button>
+    <button class="btn ghost sm add" onclick={add}>{t('day.addActivity')}</button>
   {/if}
 </section>
 
