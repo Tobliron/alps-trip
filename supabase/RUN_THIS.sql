@@ -1,0 +1,477 @@
+﻿-- ===========================================================================
+-- SHUGON : RUN THIS ONE FILE.
+--
+-- Combines, in the required order:
+--   002_shugon_schema.sql   tables, security rules, bookings view
+--   003_seed_cyprus_dolomites.sql   your existing trip as data
+--   004_storage.sql         file buckets for photos, GPX, receipts
+--
+-- GENERATED - do not hand-edit. Re-create with:
+--   Get-Content 002_*.sql,003_*.sql,004_*.sql | Set-Content RUN_THIS.sql
+--
+-- Safe to run more than once. Does not touch the old trip_state /
+-- trip_notes / trip_activity tables, so the current live site keeps working.
+-- ===========================================================================
+-- ===========================================================================
+-- Shugon â€“ Trip Planning : core schema
+--
+-- Run this in Supabase -> SQL Editor -> New query -> Run. Safe to re-run.
+--
+-- This ADDS the new multi-trip tables. It does not touch or drop the original
+-- trip_state / trip_notes / trip_activity tables -- those keep the current
+-- live site working until the new app replaces it. They get dropped in a
+-- later migration, once the new data is verified.
+-- ===========================================================================
+
+create extension if not exists pgcrypto;   -- gen_random_uuid()
+
+-- ---------------------------------------------------------------------------
+-- trips
+-- ---------------------------------------------------------------------------
+create table if not exists public.trips (
+  id          uuid primary key default gen_random_uuid(),
+  slug        text unique not null,
+  title       text not null,
+  subtitle    text,
+  start_date  date,
+  end_date    date,
+  cover_path  text,                       -- storage path, null = use fallback image
+  archived    boolean not null default false,
+  sort_order  int  not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- people (per trip, so a future trip can have a different group)
+-- ---------------------------------------------------------------------------
+create table if not exists public.people (
+  id          uuid primary key default gen_random_uuid(),
+  trip_id     uuid not null references public.trips(id) on delete cascade,
+  name        text not null,
+  avatar_path text,                       -- storage path; data-URI avatars migrate here
+  colour      text,
+  sort_order  int not null default 0,
+  unique (trip_id, name)
+);
+
+-- ---------------------------------------------------------------------------
+-- days -- the core unit
+-- ---------------------------------------------------------------------------
+create table if not exists public.days (
+  id            uuid primary key default gen_random_uuid(),
+  trip_id       uuid not null references public.trips(id) on delete cascade,
+  date          date not null,
+  title         text,                     -- "Hut day 3: -> Rif. Lagazuoi"
+  base_location text,                     -- where you sleep that night
+  lat           numeric(9,6),             -- for the weather lookup + map
+  lon           numeric(9,6),
+  phase         text,                     -- cyprus / cortina / huts / gardena / garda / venice
+  holiday       text,                     -- "Yom Kippur", "Sukkot I", ...
+  notes         text,
+  weather_cache jsonb,                    -- last fetched forecast + fetched_at
+  unique (trip_id, date)
+);
+
+-- ---------------------------------------------------------------------------
+-- activities -- ordered within a day; sort_order is what drag-and-drop writes
+-- ---------------------------------------------------------------------------
+create table if not exists public.activities (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      uuid not null references public.trips(id) on delete cascade,
+  -- null day_id = unscheduled: it belongs to the trip but has no date yet.
+  -- This is the backlog the "to book / to do" list reads from, and the pile
+  -- drag-and-drop drags out of onto a day.
+  day_id       uuid references public.days(id) on delete set null,
+  sort_order   int  not null default 0,
+  title        text not null,
+  kind         text,                      -- hike / flight / drive / plan / food / rest
+  start_time   time,
+  duration_min int,
+
+  -- getting there
+  trailhead    text,
+  parking      text,
+  transport    text,
+
+  -- the walk
+  distance_km  numeric(6,2),
+  ascent_m     int,
+  descent_m    int,
+  difficulty   text,
+  map_url      text,
+  gpx_path     text,                      -- storage path
+
+  -- practicalities
+  food_water   text,
+  backup_plan  text,                      -- the rain plan
+  notes        text,
+
+  -- bookings live on the activity; the Bookings view is a filter over this
+  booking      jsonb,                     -- {needed, status, cost, currency, ref, url, due, note}
+
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists activities_day_idx     on public.activities (day_id, sort_order);
+create index if not exists activities_trip_idx    on public.activities (trip_id);
+create index if not exists days_trip_date_idx     on public.days (trip_id, date);
+create index if not exists activities_booking_idx on public.activities using gin (booking);
+
+-- The Bookings tab becomes this: everything still outstanding, across trips.
+create or replace view public.outstanding_bookings as
+select a.id, a.trip_id, a.day_id, d.date, a.title, a.booking
+from public.activities a
+left join public.days d on d.id = a.day_id
+where a.booking is not null
+  and coalesce(a.booking->>'needed','false') = 'true'
+  and coalesce(a.booking->>'status','todo') <> 'done';
+
+-- ---------------------------------------------------------------------------
+-- budget / packing -- rows now, not positional arrays
+-- ---------------------------------------------------------------------------
+create table if not exists public.budget_items (
+  id            uuid primary key default gen_random_uuid(),
+  trip_id       uuid not null references public.trips(id) on delete cascade,
+  label         text not null,
+  est_amount    numeric(10,2),
+  actual_amount numeric(10,2),
+  currency      text not null default 'EUR',
+  note          text,
+  sort_order    int not null default 0
+);
+
+create table if not exists public.packing_items (
+  id         uuid primary key default gen_random_uuid(),
+  trip_id    uuid not null references public.trips(id) on delete cascade,
+  group_name text not null,
+  label      text not null,
+  packed     boolean not null default false,
+  sort_order int not null default 0
+);
+
+-- ---------------------------------------------------------------------------
+-- notes -- trip-level, or attached to a day or an activity
+-- ---------------------------------------------------------------------------
+create table if not exists public.trip_notes_v2 (
+  id          uuid primary key default gen_random_uuid(),
+  trip_id     uuid not null references public.trips(id) on delete cascade,
+  day_id      uuid references public.days(id) on delete cascade,
+  activity_id uuid references public.activities(id) on delete cascade,
+  author      text not null,
+  body        text not null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists trip_notes_v2_idx on public.trip_notes_v2 (trip_id, created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- files -- photos, receipts, confirmations, GPX. Bytes live in Storage.
+-- ---------------------------------------------------------------------------
+create table if not exists public.files (
+  id           uuid primary key default gen_random_uuid(),
+  trip_id      uuid not null references public.trips(id) on delete cascade,
+  day_id       uuid references public.days(id) on delete cascade,
+  activity_id  uuid references public.activities(id) on delete cascade,
+  kind         text not null,             -- photo / gpx / receipt / doc
+  bucket       text not null,             -- trip-media (public) / trip-docs (private)
+  storage_path text not null,
+  filename     text,
+  bytes        bigint,
+  uploaded_by  text,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists files_trip_idx on public.files (trip_id, kind);
+
+-- ---------------------------------------------------------------------------
+-- activity log -- who changed what
+-- ---------------------------------------------------------------------------
+create table if not exists public.change_log (
+  id         uuid primary key default gen_random_uuid(),
+  trip_id    uuid references public.trips(id) on delete cascade,
+  author     text not null,
+  action     text not null,
+  entity     text,
+  entity_id  uuid,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists change_log_idx on public.change_log (trip_id, created_at desc);
+
+-- ===========================================================================
+-- Row Level Security
+--
+-- Reading is public: the anon key in the published page can select everything.
+-- Writing requires a real Supabase Auth session -- that is the Edit button's
+-- password. This is enforced here, by Postgres, not by hiding buttons in the
+-- UI: an unauthenticated caller hitting the REST API directly is refused.
+-- ===========================================================================
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'trips','people','days','activities','budget_items',
+    'packing_items','trip_notes_v2','files','change_log'
+  ] loop
+    execute format('alter table public.%I enable row level security', t);
+
+    execute format('drop policy if exists "public read" on public.%I', t);
+    execute format('create policy "public read" on public.%I for select to anon, authenticated using (true)', t);
+
+    execute format('drop policy if exists "editors write" on public.%I', t);
+    execute format('create policy "editors write" on public.%I for all to authenticated using (true) with check (true)', t);
+  end loop;
+end $$;
+-- ===========================================================================
+-- Shugon : seed of the existing Cyprus & Dolomites trip.
+--
+-- GENERATED by scripts/generate-seed.mjs from the arrays in index.html.
+-- Do not hand-edit: re-run the script instead.
+--
+-- Structured hike fields (distance_km, ascent_m, trailhead, parking,
+-- difficulty, map_url) are deliberately left NULL. Those numbers exist only
+-- inside prose notes ("~10km loop", "+900m") and pulling them out by pattern
+-- would quietly attach the wrong figure to the wrong walk. The prose is
+-- preserved verbatim in activities.notes for you to split up by hand.
+--
+-- Bookings are seeded UNSCHEDULED (day_id null). Only some name a date, and
+-- guessing the rest would invent facts. Drag them onto days in the app.
+-- ===========================================================================
+
+begin;
+
+-- Idempotent: wipe and reinsert this one trip, leave any other trip alone.
+delete from public.trips where slug = 'cyprus-dolomites-2026';
+
+with t as (
+  insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)
+  values ('cyprus-dolomites-2026', 'Cyprus & the Dolomites', '24 days Â· 3 friends Â· TLV â†’ LCA â†’ VCE â†’ TLV', '2026-09-17', '2026-10-10', 0)
+  returning id
+)
+select id as trip_id into temporary table _trip from t;
+
+-- people
+insert into public.people (trip_id, name, sort_order) select trip_id, 'Liron', 0 from _trip;
+insert into public.people (trip_id, name, sort_order) select trip_id, 'Sagi', 1 from _trip;
+insert into public.people (trip_id, name, sort_order) select trip_id, 'Buza', 2 from _trip;
+
+-- days: every date in the trip, so empty days still exist to drag onto
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-17', 'âœˆï¸ TLV â†’ Larnaca', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-18', 'Troodos Mountains hike', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-19', 'Coast day: Akamas / Cape Greco', 'Cyprus (Limassol or Paphos)', 'cyprus', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-20', 'Relaxed day Â· Erev Yom Kippur', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Relaxed day Â· Erev Yom Kippur' from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-21', 'Yom Kippur â€” rest day', 'Cyprus (Limassol or Paphos)', 'cyprus', 'Yom Kippur â€” rest day' from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-22', 'âœˆï¸ LCAâ†’VCE (me) + TLVâ†’VCE (friends) â†’ Cortina', 'Cortina d''Ampezzo', 'cortina', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-23', 'Tre Cime di Lavaredo loop', 'Cortina d''Ampezzo', 'cortina', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-24', 'Lago di Sorapis', 'Cortina d''Ampezzo', 'cortina', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-25', 'Cinque Torri + pack hut bags Â· Erev Sukkot', 'Cortina d''Ampezzo', 'cortina', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-26', 'Hut day 1: Braies â†’ Rif. Sennes/Biella', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-27', 'Hut day 2: â†’ Rif. Fanes/Lavarella', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-28', 'Hut day 3: â†’ Rif. Lagazuoi (2,752m)', 'Rifugio (Alta Via 1)', 'huts', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-29', 'Descend â†’ drive to Ortisei', 'Ortisei, Val Gardena', 'gardena', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-09-30', 'Seceda ridgeline', 'Ortisei, Val Gardena', 'gardena', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-01', 'Alpe di Siusi meadows', 'Ortisei, Val Gardena', 'gardena', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-02', 'Sassolungo circuit Â· Erev Simchat Torah', 'Ortisei, Val Gardena', 'gardena', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-03', 'Rest day: Vallunga stroll Â· Simchat Torah', 'Ortisei, Val Gardena', 'gardena', 'Rest day: Vallunga stroll Â· Simchat Torah' from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-04', 'Val di Funes: Adolf Munkel trail', 'Ortisei, Val Gardena', 'gardena', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-05', 'Bolzano â†’ Lake Garda', 'Riva del Garda', 'garda', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-06', 'Ponale trail above the lake', 'Riva del Garda', 'garda', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-07', 'Malcesine + Monte Baldo', 'Riva del Garda', 'garda', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-08', 'Garda flex day ðŸ·', 'Riva del Garda', 'garda', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-09', 'Drive to Venice + evening in the city', 'Venice / Mestre', 'venice', null from _trip;
+insert into public.days (trip_id, date, title, base_location, phase, holiday) select trip_id, '2026-10-10', 'âœˆï¸ Venice â†’ TLV', 'Venice / Mestre', 'venice', null from _trip;
+
+-- one activity per existing calendar entry, notes preserved verbatim
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'âœˆï¸ TLV â†’ Larnaca', 'flight', 'BOOK â€” add airline + time.
+Arrive Cyprus, settle in (Limassol or Paphos base). Seafront dinner.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-17';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Troodos Mountains hike', 'hike', 'Warm-up training day: Artemis/Atalanti trail on Mt Olympus, Kykkos Monastery, Omodos wine village.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-18';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Coast day: Akamas / Cape Greco', 'plan', 'Blue Lagoon, sea caves, swim. Relaxed Shabbat pace.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-19';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Relaxed day Â· Erev Yom Kippur', 'holiday', 'Morning swim, big early meal. Fast begins at sunset.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-20';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Yom Kippur â€” rest day', 'holiday', 'Quiet day in Cyprus. Fast ends at nightfall. Pack for tomorrow''s flight.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-21';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'âœˆï¸ LCAâ†’VCE (me) + TLVâ†’VCE (friends) â†’ Cortina', 'flight', 'BOOK â€” coordinate arrival times!
+Meet at Venice Marco Polo, pick up rental car, drive ~2h to Cortina. Grocery + gear check.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-22';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Tre Cime di Lavaredo loop', 'hike', 'Leave Cortina 6:30 â€” toll-road parking fills by 8. ~10km loop, lunch at Rif. Locatelli.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-23';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Lago di Sorapis', 'hike', '~12km from Passo Tre Croci, trail 215. Cabled ledges â€” steady feet, poles for descent.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-24';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Cinque Torri + pack hut bags Â· Erev Sukkot', 'hike', 'Light day at the WWI open-air museum. Evening: hut bags only, big luggage stays at hotel/car. Sukkot begins at sunset.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-25';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Hut day 1: Braies â†’ Rif. Sennes/Biella', 'hike', 'Reserve Braies parking online or taxi in. ~6h, +900m. Sukkot I.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-26';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Hut day 2: â†’ Rif. Fanes/Lavarella', 'hike', '~5-6h across the Fanes karst plateau. Lavarella has its own tiny brewery.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-27';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Hut day 3: â†’ Rif. Lagazuoi (2,752m)', 'hike', '~6-7h via Forcella del Lago. Sunset + sunrise at the top = trip highlight.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-28';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Descend â†’ drive to Ortisei', 'plan', 'Cable car or WWI tunnel route down to Falzarego. Car â†’ Passo Gardena â†’ Ortisei (~1.5h). Check in 5-6 nights. Laundry. Pizza.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-29';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Seceda ridgeline', 'hike', 'Lift from Ortisei â€” CONFIRM autumn closing date. Ridge walk, descend Val d''Anna.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-09-30';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Alpe di Siusi meadows', 'plan', 'Europe''s biggest alpine meadow, gentle day, coffee at a malga.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-01';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Sassolungo circuit Â· Erev Simchat Torah', 'hike', '~17km loop from Passo Sella (or shorter CittÃ  dei Sassi option). Holiday begins at sunset.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-02';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Rest day: Vallunga stroll Â· Simchat Torah', 'holiday', 'Flat valley walk, sauna, gelato, Ortisei pedestrian street.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-03';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Val di Funes: Adolf Munkel trail', 'hike', '~9km under the Odle spires + the Santa Maddalena postcard view. Geisleralm lunch if open.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-04';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Bolzano â†’ Lake Garda', 'plan', 'Ã–tzi museum + old town, then drive ~2h to Riva del Garda. Check in 4 nights.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-05';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Ponale trail above the lake', 'hike', 'Carved into the cliffs â€” easy, spectacular. Swim after.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-06';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Malcesine + Monte Baldo', 'hike', 'Ferry or drive, rotating cable car up, ridge walk with lake views.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-07';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Garda flex day ðŸ·', 'plan', 'Limone, kayak, Bardolino wine tasting, or pure lakefront laziness. Celebration dinner.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-08';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'Drive to Venice + evening in the city', 'plan', '~2h. Bags at Mestre hotel, vaporetto in, golden-hour wander, last dinner.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-09';
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes)
+  select t.trip_id, d.id, 0, 'âœˆï¸ Venice â†’ TLV', 'flight', 'BOOK â€” add time. Return rental car at VCE first.'
+  from _trip t join public.days d on d.trip_id = t.trip_id and d.date = '2026-10-10';
+
+-- bookings: unscheduled backlog, each carrying its booking payload
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 0, 'Rifugio Lagazuoi â€” night of 28/9', 'booking', 'Most popular hut on the route. Book FIRST. ~40â‚¬ deposit pp, half board.', '{"needed":true,"status":"todo","due":"NOW","note":"Most popular hut on the route. Book FIRST. ~40â‚¬ deposit pp, half board.","url":"https://www.rifugiolagazuoi.com/","linkLabel":"rifugiolagazuoi.com"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 1, 'Rifugio Fanes or Lavarella â€” night of 27/9', 'booking', 'Either works; Lavarella brews its own beer.', '{"needed":true,"status":"todo","due":"NOW","note":"Either works; Lavarella brews its own beer.","url":"https://www.lavarella.it/","linkLabel":"lavarella.it"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 2, 'Rifugio Sennes or Biella â€” night of 26/9', 'booking', 'Sennes is slightly easier to reach from Braies.', '{"needed":true,"status":"todo","due":"NOW","note":"Sennes is slightly easier to reach from Braies.","url":"https://www.rifugiosennes.com/","linkLabel":"rifugiosennes.com"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 3, 'Flights: TLVâ†’LCA (17/9), LCAâ†’VCE + TLVâ†’VCE (22/9), VCEâ†’TLV (10/10)', 'booking', 'Coordinate the 22/9 Venice arrivals within ~1h of each other.', '{"needed":true,"status":"todo","due":"This week","note":"Coordinate the 22/9 Venice arrivals within ~1h of each other.","url":null,"linkLabel":null}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 4, 'Rental car VCE, 22/9 â†’ 10/10', 'booking', '18 days. Book early for automatic. Add all drivers.', '{"needed":true,"status":"todo","due":"This week","note":"18 days. Book early for automatic. Add all drivers.","url":null,"linkLabel":null}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 5, 'Cortina accommodation, 3n (22â€“25/9)', 'booking', 'Shoulder season = decent prices. Ask about luggage storage during hut trek.', '{"needed":true,"status":"todo","due":"Soon","note":"Shoulder season = decent prices. Ask about luggage storage during hut trek.","url":"https://cortina.dolomiti.org/en/","linkLabel":"cortina.dolomiti.org"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 6, 'Ortisei accommodation, 5-6n (29/9â€“4/10)', 'booking', 'Look for sauna + laundry. Garni/B&B style is great value.', '{"needed":true,"status":"todo","due":"Soon","note":"Look for sauna + laundry. Garni/B&B style is great value.","url":"https://www.valgardena.it/en/","linkLabel":"valgardena.it"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 7, 'Riva del Garda accommodation, 4n (5â€“9/10)', 'booking', 'Lakefront or old town.', '{"needed":true,"status":"todo","due":"Soon","note":"Lakefront or old town.","url":"https://www.gardatrentino.it/en/","linkLabel":"gardatrentino.it"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 8, 'Cyprus accommodation, 5n (17â€“22/9)', 'booking', 'Limassol or Paphos base.', '{"needed":true,"status":"todo","due":"Soon","note":"Limassol or Paphos base.","url":"https://www.visitcyprus.com/","linkLabel":"visitcyprus.com"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 9, 'Venice/Mestre airport hotel, 1n (9/10)', 'booking', 'Mestre = cheaper, quick train to Venice.', '{"needed":true,"status":"todo","due":"Later","note":"Mestre = cheaper, quick train to Venice.","url":"https://actv.avmspa.it/en","linkLabel":"vaporetto tickets"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 10, 'Lago di Braies parking reservation (26/9)', 'booking', 'Mandatory online booking in season â€” check autumn rules.', '{"needed":true,"status":"todo","due":"Sep","note":"Mandatory online booking in season â€” check autumn rules.","url":"https://www.prags.bz/en/","linkLabel":"prags.bz"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 11, 'Check Seceda + Lagazuoi lift autumn closing dates', 'booking', 'Lifts wind down early-mid Oct â€” confirm before locking Val Gardena days.', '{"needed":true,"status":"todo","due":"Sep","note":"Lifts wind down early-mid Oct â€” confirm before locking Val Gardena days.","url":"https://www.seceda.it/","linkLabel":"seceda.it"}'::jsonb from _trip;
+insert into public.activities (trip_id, day_id, sort_order, title, kind, notes, booking)
+  select trip_id, null, 12, 'Travel insurance w/ mountain rescue cover', 'booking', 'Check it covers hiking above 2,500m.', '{"needed":true,"status":"todo","due":"Sep","note":"Check it covers hiking above 2,500m.","url":null,"linkLabel":null}'::jsonb from _trip;
+
+-- budget
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Flights (all 4 legs)', 380, 'TLV-LCA ~80, LCA-VCE ~150, VCE-TLV ~150; friends pay ~300', 0 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Rental car share (Ã·3)', 230, '18 days incl. fuel + tolls + parking', 1 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Cyprus 5 nights', 280, 'Hotel/apt + food, before friends join', 2 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Cortina 3 nights (Ã· share)', 210, 'B&B/hotel shoulder-season', 3 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Rifugios 3 nights half-board', 240, '~75-85 pp/night incl. dinner + breakfast', 4 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Ortisei 5-6 nights', 330, 'Garni/B&B with breakfast', 5 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Lake Garda 4 nights', 260, 'Hotel/apt', 6 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Venice night + evening', 90, 'Mestre hotel + vaporetto + dinner', 7 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Food & restaurants', 400, '~20-25/day outside huts', 8 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Lifts, tolls, entries', 120, 'Tre Cime toll, Seceda lift, Lagazuoi cable car, Ã–tzi museum', 9 from _trip;
+insert into public.budget_items (trip_id, label, est_amount, note, sort_order) select trip_id, 'Buffer', 150, 'Weather changes, gelato emergencies', 10 from _trip;
+
+-- packing
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Sleeping bag liner (mandatory!)', 0 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Cash â€” many huts card-free', 1 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Headlamp', 2 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Earplugs (dorm rooms)', 3 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Quick-dry towel', 4 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Hut essentials', 'Slippers/crocs for inside huts', 5 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Broken-in hiking boots', 6 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Poles (descents!)', 7 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Rain shell + warm layer', 8 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Hat + gloves (2,700m in autumn!)', 9 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', '2L water capacity', 10 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Sunscreen + sunglasses', 11 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Blister kit + basic first aid', 12 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'On the trail', 'Snacks / energy bars', 13 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Passport', 14 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Driving licences (all drivers)', 15 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Swimwear (Cyprus + Garda)', 16 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Power adapter (EU type C/F)', 17 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Offline maps downloaded', 18 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Day pack 25-30L', 19 from _trip;
+insert into public.packing_items (trip_id, group_name, label, sort_order) select trip_id, 'Everything else', 'Evening clothes for Venice dinner', 20 from _trip;
+
+drop table _trip;
+commit;
+-- ===========================================================================
+-- Shugon : storage buckets for photos, GPX tracks, receipts and confirmations.
+-- Run after 002. Safe to re-run.
+-- ===========================================================================
+
+-- trip-media : photos, trip covers, profile pictures, GPX tracks.
+--   Public read, so <img src> and the map's GPX loader work without signing
+--   every URL. Assume anything in here is world-readable.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('trip-media', 'trip-media', true, 15728640)          -- 15 MB per file
+on conflict (id) do update set public = true, file_size_limit = 15728640;
+
+-- trip-docs : booking confirmations, receipts, tickets.
+--   Private. Reading requires a signed URL, which the app mints for viewers.
+--   This is where anything with a name, a card, or a reference number goes.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('trip-docs', 'trip-docs', false, 15728640)
+on conflict (id) do update set public = false, file_size_limit = 15728640;
+
+-- ---------------------------------------------------------------------------
+-- Access. Same rule as the tables: anyone can look, only an unlocked editor
+-- can change anything. Uploading is a write, so it needs the Edit password.
+-- ---------------------------------------------------------------------------
+drop policy if exists "media public read"   on storage.objects;
+drop policy if exists "media editor write"  on storage.objects;
+drop policy if exists "media editor update" on storage.objects;
+drop policy if exists "media editor delete" on storage.objects;
+drop policy if exists "docs editor read"    on storage.objects;
+
+create policy "media public read" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'trip-media');
+
+create policy "docs editor read" on storage.objects
+  for select to authenticated using (bucket_id = 'trip-docs');
+
+create policy "media editor write" on storage.objects
+  for insert to authenticated with check (bucket_id in ('trip-media','trip-docs'));
+
+create policy "media editor update" on storage.objects
+  for update to authenticated
+  using (bucket_id in ('trip-media','trip-docs'))
+  with check (bucket_id in ('trip-media','trip-docs'));
+
+create policy "media editor delete" on storage.objects
+  for delete to authenticated using (bucket_id in ('trip-media','trip-docs'));
+
+-- Path convention used by the app:
+--   trip-media/{trip_slug}/cover.jpg
+--   trip-media/{trip_slug}/people/{name}.jpg
+--   trip-media/{trip_slug}/days/{day_id}/{uuid}-{filename}
+--   trip-media/{trip_slug}/gpx/{activity_id}.gpx
+--   trip-docs/{trip_slug}/receipts/{uuid}-{filename}
