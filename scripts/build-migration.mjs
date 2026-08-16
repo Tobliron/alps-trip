@@ -56,6 +56,35 @@ if (!/create table if not exists public\.trips/.test(out)) problems.push('schema
 if (!/insert into public\.days/.test(out)) problems.push('seed section missing');
 if (!/media public read/.test(out)) problems.push('storage section missing');
 
+// Postgres handles comments fine. The Supabase SQL editor splits the script
+// into statements itself with a parser that does NOT skip `--` comments, so
+// punctuation inside one leaks into the SQL:
+//   ;  ends the statement early, and the rest of the comment is parsed as SQL
+//      ("...on the activity; the Bookings view..." -> relation "the" does not exist)
+//   '  opens a string literal that swallows everything to the next quote
+// Both cost a round trip with the user, so both are hard failures now.
+const badComments = out
+  .split('\n')
+  .map((line, n) => ({ line, n: n + 1 }))
+  .map(({ line, n }) => {
+    const c = line.indexOf('--');
+    if (c === -1) return null;
+    const before = line.slice(0, c);
+    // Ignore a "--" that is itself inside a string literal.
+    if ((before.match(/'/g) || []).length % 2 === 1) return null;
+    const comment = line.slice(c);
+    const chars = [comment.includes(';') && ';', comment.includes("'") && "'"].filter(Boolean);
+    return chars.length ? { n, line: line.trim(), chars } : null;
+  })
+  .filter(Boolean);
+
+if (badComments.length) {
+  problems.push(
+    'punctuation inside a SQL comment that breaks the Supabase editor:\n' +
+    badComments.map(b => `      line ${b.n} [${b.chars.join(' ')}]: ${b.line}`).join('\n')
+  );
+}
+
 if (problems.length) {
   console.error('REFUSING TO WRITE:\n  - ' + problems.join('\n  - '));
   process.exit(1);

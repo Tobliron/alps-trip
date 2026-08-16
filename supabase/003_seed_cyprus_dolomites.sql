@@ -22,7 +22,7 @@
 -- statement looks the trip up by its slug, so order is the only
 -- requirement and re-running is always safe.
 
--- Wipe any previous copy of this trip; cascades to its days and activities.
+-- Wipe any previous copy of this trip. Cascades to its days and activities.
 delete from public.trips where slug = 'cyprus-dolomites-2026';
 
 insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)

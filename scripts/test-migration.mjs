@@ -58,6 +58,37 @@ function splitStatements(sql) {
   return out.filter(s => s.replace(/--[^\n]*\n?/g, '').trim().length > 0);
 }
 
+/**
+ * A deliberately naive splitter, modelling what the Supabase SQL editor
+ * appears to do: it tracks string literals and dollar-quoted blocks but does
+ * NOT skip `--` comments, so an apostrophe in a comment opens a phantom
+ * string. Running the file through this too means anything the editor would
+ * choke on fails here first.
+ */
+function splitStatementsNaive(sql) {
+  const out = [];
+  let buf = '', i = 0, inStr = false, dollarTag = null;
+  while (i < sql.length) {
+    const ch = sql[i];
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) { buf += dollarTag; i += dollarTag.length; dollarTag = null; continue; }
+      buf += ch; i++; continue;
+    }
+    if (inStr) {
+      buf += ch;
+      if (ch === "'") inStr = sql[i + 1] === "'" ? (buf += sql[++i], true) : false;
+      i++; continue;
+    }
+    if (ch === "'") { inStr = true; buf += ch; i++; continue; }
+    const dq = sql.slice(i).match(/^\$[A-Za-z_]*\$/);
+    if (dq) { dollarTag = dq[0]; buf += dollarTag; i += dollarTag.length; continue; }
+    if (ch === ';') { out.push(buf.trim()); buf = ''; i++; continue; }
+    buf += ch; i++;
+  }
+  if (buf.trim()) out.push(buf.trim());
+  return out.filter(s => s.replace(/--[^\n]*\n?/g, '').trim().length > 0);
+}
+
 function psql(args, opts = {}) {
   return execFileSync(PSQL, ['-h', '127.0.0.1', '-p', PORT, '-U', 'postgres', '--no-psqlrc', ...args], {
     encoding: 'utf8', env: { ...process.env, PGCLIENTENCODING: 'UTF8' }, ...opts
@@ -74,8 +105,20 @@ if (existsSync(scratch)) rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 
 const sql = readFileSync(join(root, 'supabase', 'RUN_THIS.sql'), 'utf8');
-const statements = splitStatements(sql);
-console.log(`${statements.length} statements — running each in a separate session`);
+
+// If a comment-aware and a comment-blind splitter disagree on how many
+// statements there are, the file reads differently depending on whose parser
+// sees it — which is exactly how `relation "the" does not exist` happened.
+const strict = splitStatements(sql);
+const naive = splitStatementsNaive(sql);
+if (strict.length !== naive.length) {
+  console.error(`SPLITTER DISAGREEMENT: comment-aware sees ${strict.length} statements, comment-blind sees ${naive.length}.`);
+  console.error('Almost always an apostrophe inside a -- comment. The Supabase editor will fail on this.');
+  process.exit(1);
+}
+
+const statements = naive;   // test against the harsher reading
+console.log(`${statements.length} statements (both splitters agree) — running each in a separate session`);
 
 let failed = 0;
 statements.forEach((stmt, idx) => {

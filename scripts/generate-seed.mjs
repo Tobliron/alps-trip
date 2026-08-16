@@ -92,7 +92,7 @@ L.push('-- guarantee that the whole script runs in a single one. Instead each');
 L.push('-- statement looks the trip up by its slug, so order is the only');
 L.push('-- requirement and re-running is always safe.');
 L.push('');
-L.push('-- Wipe any previous copy of this trip; cascades to its days and activities.');
+L.push('-- Wipe any previous copy of this trip. Cascades to its days and activities.');
 L.push(`delete from public.trips where slug = ${q(TRIP_SLUG)};`);
 L.push('');
 L.push('insert into public.trips (slug, title, subtitle, start_date, end_date, sort_order)');

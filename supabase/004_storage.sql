@@ -4,8 +4,8 @@
 -- ===========================================================================
 
 -- trip-media : photos, trip covers, profile pictures, GPX tracks.
---   Public read, so <img src> and the map's GPX loader work without signing
---   every URL. Assume anything in here is world-readable.
+--   Public read, so <img src> and the GPX loader on the map work without
+--   signing every URL. Assume anything in here is world-readable.
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('trip-media', 'trip-media', true, 15728640)          -- 15 MB per file
 on conflict (id) do update set public = true, file_size_limit = 15728640;

@@ -34,7 +34,7 @@ create table if not exists public.people (
   id          uuid primary key default gen_random_uuid(),
   trip_id     uuid not null references public.trips(id) on delete cascade,
   name        text not null,
-  avatar_path text,                       -- storage path; data-URI avatars migrate here
+  avatar_path text,                       -- storage path, data-URI avatars migrate here
   colour      text,
   sort_order  int not null default 0,
   unique (trip_id, name)
@@ -59,7 +59,7 @@ create table if not exists public.days (
 );
 
 -- ---------------------------------------------------------------------------
--- activities -- ordered within a day; sort_order is what drag-and-drop writes
+-- activities, ordered within a day. sort_order is what drag-and-drop writes.
 -- ---------------------------------------------------------------------------
 create table if not exists public.activities (
   id           uuid primary key default gen_random_uuid(),
@@ -92,7 +92,7 @@ create table if not exists public.activities (
   backup_plan  text,                      -- the rain plan
   notes        text,
 
-  -- bookings live on the activity; the Bookings view is a filter over this
+  -- bookings live on the activity. The Bookings view is a filter over this.
   booking      jsonb,                     -- {needed, status, cost, currency, ref, url, due, note}
 
   created_at   timestamptz not null default now()
@@ -190,9 +190,15 @@ create index if not exists change_log_idx on public.change_log (trip_id, created
 -- Row Level Security
 --
 -- Reading is public: the anon key in the published page can select everything.
--- Writing requires a real Supabase Auth session -- that is the Edit button's
--- password. This is enforced here, by Postgres, not by hiding buttons in the
--- UI: an unauthenticated caller hitting the REST API directly is refused.
+-- Writing requires a real Supabase Auth session, unlocked by the group
+-- password behind the Edit button. This is enforced here, by Postgres, not by
+-- hiding buttons in the UI: an unauthenticated caller hitting the REST API
+-- directly is refused.
+--
+-- No apostrophes in these comments, deliberately. The Supabase SQL editor
+-- splits a script into statements itself, and its splitter treats an
+-- apostrophe inside a -- comment as the start of a string literal, which
+-- swallows everything up to the next quote and derails the parse.
 -- ===========================================================================
 do $$
 declare t text;
