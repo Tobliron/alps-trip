@@ -200,19 +200,61 @@ create index if not exists change_log_idx on public.change_log (trip_id, created
 -- apostrophe inside a -- comment as the start of a string literal, which
 -- swallows everything up to the next quote and derails the parse.
 -- ===========================================================================
-do $$
-declare t text;
-begin
-  foreach t in array array[
-    'trips','people','days','activities','budget_items',
-    'packing_items','trip_notes_v2','files','change_log'
-  ] loop
-    execute format('alter table public.%I enable row level security', t);
+-- Written out one table at a time rather than looped in a DO block. A DO block
+-- needs dollar quoting, and the Supabase SQL editor splits a pasted script with
+-- a parser that does not reliably respect it, cutting the block at the
+-- semicolons inside. Repetitive, but it survives any statement splitter.
 
-    execute format('drop policy if exists "public read" on public.%I', t);
-    execute format('create policy "public read" on public.%I for select to anon, authenticated using (true)', t);
+alter table public.trips enable row level security;
+drop policy if exists "public read" on public.trips;
+create policy "public read" on public.trips for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.trips;
+create policy "editors write" on public.trips for all to authenticated using (true) with check (true);
 
-    execute format('drop policy if exists "editors write" on public.%I', t);
-    execute format('create policy "editors write" on public.%I for all to authenticated using (true) with check (true)', t);
-  end loop;
-end $$;
+alter table public.people enable row level security;
+drop policy if exists "public read" on public.people;
+create policy "public read" on public.people for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.people;
+create policy "editors write" on public.people for all to authenticated using (true) with check (true);
+
+alter table public.days enable row level security;
+drop policy if exists "public read" on public.days;
+create policy "public read" on public.days for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.days;
+create policy "editors write" on public.days for all to authenticated using (true) with check (true);
+
+alter table public.activities enable row level security;
+drop policy if exists "public read" on public.activities;
+create policy "public read" on public.activities for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.activities;
+create policy "editors write" on public.activities for all to authenticated using (true) with check (true);
+
+alter table public.budget_items enable row level security;
+drop policy if exists "public read" on public.budget_items;
+create policy "public read" on public.budget_items for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.budget_items;
+create policy "editors write" on public.budget_items for all to authenticated using (true) with check (true);
+
+alter table public.packing_items enable row level security;
+drop policy if exists "public read" on public.packing_items;
+create policy "public read" on public.packing_items for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.packing_items;
+create policy "editors write" on public.packing_items for all to authenticated using (true) with check (true);
+
+alter table public.trip_notes_v2 enable row level security;
+drop policy if exists "public read" on public.trip_notes_v2;
+create policy "public read" on public.trip_notes_v2 for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.trip_notes_v2;
+create policy "editors write" on public.trip_notes_v2 for all to authenticated using (true) with check (true);
+
+alter table public.files enable row level security;
+drop policy if exists "public read" on public.files;
+create policy "public read" on public.files for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.files;
+create policy "editors write" on public.files for all to authenticated using (true) with check (true);
+
+alter table public.change_log enable row level security;
+drop policy if exists "public read" on public.change_log;
+create policy "public read" on public.change_log for select to anon, authenticated using (true);
+drop policy if exists "editors write" on public.change_log;
+create policy "editors write" on public.change_log for all to authenticated using (true) with check (true);
