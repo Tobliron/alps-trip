@@ -38,6 +38,14 @@ export function shrinkImage(file, maxEdge = 1600, quality = 0.82) {
       URL.revokeObjectURL(url);
       const { naturalWidth: w, naturalHeight: h } = img;
       if (!w || !h) return reject(new Error('that image has no dimensions'));
+
+      // Already small enough and already a JPEG: leave it alone. Re-encoding
+      // an image that needs no resize throws away quality for nothing, and on
+      // an already-compressed JPEG it usually makes the file BIGGER.
+      if (Math.max(w, h) <= maxEdge && file.type === 'image/jpeg') {
+        return resolve(file);
+      }
+
       const scale = Math.min(1, maxEdge / Math.max(w, h));
       const cw = Math.round(w * scale), ch = Math.round(h * scale);
       const c = document.createElement('canvas');
@@ -46,7 +54,12 @@ export function shrinkImage(file, maxEdge = 1600, quality = 0.82) {
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, cw, ch);
       c.toBlob(
-        b => (b ? resolve(b) : reject(new Error('could not re-encode that image'))),
+        b => {
+          if (!b) return reject(new Error('could not re-encode that image'));
+          // If our version is somehow larger than what we were given, keep
+          // theirs. Uploading a bigger file than the user picked is never right.
+          resolve(b.size < file.size ? b : file);
+        },
         'image/jpeg',
         quality
       );
@@ -79,8 +92,11 @@ export async function uploadFile(file, where) {
   if (isPhoto) {
     if (!/^image\//.test(file.type)) throw new Error(`${file.name} is not an image.`);
     body = await shrinkImage(file, where.kind === 'cover' ? 2000 : 1600);
-    filename = filename.replace(/\.[^.]+$/, '') + '.jpg';
+    // shrinkImage may hand back the original untouched, so name the file after
+    // what we are actually uploading rather than assuming it re-encoded.
+    if (body !== file) filename = filename.replace(/\.[^.]+$/, '') + '.jpg';
   }
+  const contentType = body.type || file.type || 'application/octet-stream';
 
   const bucket = bucketFor(where.kind);
   const folder = where.activityId ? `activities/${where.activityId}`
@@ -90,7 +106,7 @@ export async function uploadFile(file, where) {
   const path = `${where.tripSlug}/${folder}/${crypto.randomUUID()}-${safeName(filename)}`;
 
   const up = await supabase.storage.from(bucket).upload(path, body, {
-    contentType: isPhoto ? 'image/jpeg' : (file.type || 'application/octet-stream'),
+    contentType,
     upsert: false
   });
   if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
