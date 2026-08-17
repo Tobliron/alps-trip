@@ -98,6 +98,38 @@ const en = {
   'dash.onMap': 'on the map', 'dash.photos': '{n} photos uploaded',
   'dash.untilLine': '{n} days until {trip}. {m} things still to schedule.',
 
+  'tab.overview': 'Overview', 'tab.days': 'Days', 'tab.map': 'Map', 'tab.budget': 'Budget',
+  'tab.packing': 'Packing', 'tab.notes': 'Notes', 'tab.log': 'Activity', 'tab.backup': 'Backup',
+
+  'cd.until': 'Counting down to',
+  'cd.days': 'days', 'cd.hours': 'hours', 'cd.minutes': 'minutes', 'cd.seconds': 'seconds',
+
+  'search.placeholder': 'Search the trip…',
+  'search.none': 'Nothing matches “{q}”.',
+
+  'budget.title': 'Budget',
+  'budget.blurb': 'Per person, in euro. Estimated is what you planned; actual is what it really cost.',
+  'budget.item': 'Item', 'budget.est': 'Estimated', 'budget.actual': 'Actual', 'budget.note': 'Note',
+  'budget.totalPP': 'Total per person', 'budget.totalGroup': 'Trip total for {n} people',
+  'budget.add': '+ Add budget line',
+
+  'pack.title': 'Packing',
+  'pack.blurb': 'Hut essentials matter most — rifugios require a sleeping bag liner and many are cash-only.',
+  'pack.count': '{n} of {total} packed',
+  'pack.add': '+ Add item',
+
+  'notes.title': 'Notes',
+  'notes.blurb': 'Shared with the group — confirmation numbers, restaurant tips, who owes what.',
+  'notes.placeholder': 'Write a note for the group…',
+  'notes.post': 'Post note', 'notes.posting': 'Posting…', 'notes.delete': 'delete',
+  'notes.empty': 'No notes yet.',
+  'notes.lockedHint': 'Unlock editing to add a note.',
+  'notes.justNow': 'just now', 'notes.minsAgo': '{n}m ago', 'notes.hoursAgo': '{n}h ago',
+
+  'log.title': 'Activity',
+  'log.blurb': 'Who changed what, newest first. Names are self-declared — a record for the three of you, not a security log.',
+  'log.empty': 'Nothing recorded yet.',
+
   'data.title': 'Backup',
   'data.blurb': 'A copy of this trip as one JSON file. It mirrors the database exactly, so importing it restores the trip rather than duplicating it.',
   'data.export': '⬇ Export trip JSON', 'data.exporting': 'Exporting…',
@@ -194,6 +226,38 @@ const he = {
   'dash.budget': 'תקציב לאדם', 'dash.spent': 'הוצאו {n}€ עד כה', 'dash.noSpend': 'לא נרשמו הוצאות',
   'dash.onMap': 'על המפה', 'dash.photos': '{n} תמונות הועלו',
   'dash.untilLine': 'עוד {n} ימים ל{trip}. {m} דברים עדיין לשבץ.',
+
+  'tab.overview': 'סקירה', 'tab.days': 'ימים', 'tab.map': 'מפה', 'tab.budget': 'תקציב',
+  'tab.packing': 'ציוד', 'tab.notes': 'הערות', 'tab.log': 'פעילות', 'tab.backup': 'גיבוי',
+
+  'cd.until': 'הספירה לאחור ל',
+  'cd.days': 'ימים', 'cd.hours': 'שעות', 'cd.minutes': 'דקות', 'cd.seconds': 'שניות',
+
+  'search.placeholder': 'חיפוש בטיול…',
+  'search.none': 'אין תוצאות ל״{q}״.',
+
+  'budget.title': 'תקציב',
+  'budget.blurb': 'לאדם, ביורו. משוער הוא מה שתכננתם; בפועל הוא מה שזה באמת עלה.',
+  'budget.item': 'פריט', 'budget.est': 'משוער', 'budget.actual': 'בפועל', 'budget.note': 'הערה',
+  'budget.totalPP': 'סה״כ לאדם', 'budget.totalGroup': 'סה״כ לטיול עבור {n} אנשים',
+  'budget.add': '+ הוספת שורה',
+
+  'pack.title': 'ציוד',
+  'pack.blurb': 'הציוד לבקתות הוא הקריטי — הרפוג׳ים דורשים שק שינה פנימי ורבים מהם מזומן בלבד.',
+  'pack.count': '{n} מתוך {total} ארוזים',
+  'pack.add': '+ הוספת פריט',
+
+  'notes.title': 'הערות',
+  'notes.blurb': 'משותף לקבוצה — מספרי אישור, המלצות מסעדות, מי חייב למי.',
+  'notes.placeholder': 'כתבו הערה לקבוצה…',
+  'notes.post': 'פרסום', 'notes.posting': 'מפרסם…', 'notes.delete': 'מחיקה',
+  'notes.empty': 'עדיין אין הערות.',
+  'notes.lockedHint': 'פתחו עריכה כדי להוסיף הערה.',
+  'notes.justNow': 'הרגע', 'notes.minsAgo': 'לפני {n} דק׳', 'notes.hoursAgo': 'לפני {n} שע׳',
+
+  'log.title': 'פעילות',
+  'log.blurb': 'מי שינה מה, מהחדש לישן. השמות מוצהרים עצמאית — תיעוד עבורכם, לא יומן אבטחה.',
+  'log.empty': 'עדיין לא תועד כלום.',
 
   'data.title': 'גיבוי',
   'data.blurb': 'עותק של הטיול בקובץ JSON אחד. הוא משקף את מסד הנתונים במדויק, כך שייבוא משחזר את הטיול ולא משכפל אותו.',

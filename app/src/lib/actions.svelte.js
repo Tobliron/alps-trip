@@ -1,7 +1,10 @@
 import { app } from './state.svelte.js';
 import {
   updateActivity, insertActivity, deleteActivity,
-  reorderActivities, updateDay, logChange, cacheSet
+  reorderActivities, updateDay, logChange, cacheSet,
+  updateBudgetItem, insertBudgetItem, deleteBudgetItem,
+  updatePackingItem, insertPackingItem, deletePackingItem,
+  insertNote, deleteNote
 } from './data.js';
 
 /**
@@ -142,6 +145,86 @@ export async function saveDay(id, patch) {
     persistCache();
     throw e;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Budget, packing and notes. Same shape as above: change it locally, persist,
+ * put it back if the write is refused.
+ * ------------------------------------------------------------------------- */
+
+export async function saveBudget(id, patch) {
+  const row = app.bundle.budget.find(b => b.id === id);
+  const before = { ...row };
+  Object.assign(row, patch);
+  persistCache();
+  try {
+    await updateBudgetItem(id, patch);
+  } catch (e) {
+    Object.assign(row, before); persistCache(); throw e;
+  }
+}
+
+export async function addBudgetItem() {
+  const sort = app.bundle.budget.reduce((m, b) => Math.max(m, b.sort_order ?? 0), -1) + 1;
+  const created = await insertBudgetItem({ trip_id: app.tripId, label: 'New item', sort_order: sort });
+  app.bundle.budget.push(created);
+  persistCache();
+  return created;
+}
+
+export async function removeBudgetItem(id) {
+  app.bundle.budget = app.bundle.budget.filter(b => b.id !== id);
+  persistCache();
+  await deleteBudgetItem(id);
+}
+
+export async function savePacking(id, patch) {
+  const row = app.bundle.packing.find(p => p.id === id);
+  const before = { ...row };
+  Object.assign(row, patch);
+  persistCache();
+  try {
+    await updatePackingItem(id, patch);
+    if ('packed' in patch) {
+      logChange(app.tripId, app.who ?? 'someone',
+        `${patch.packed ? 'packed' : 'un-packed'} "${row.label}"`, 'packing', id);
+    }
+  } catch (e) {
+    Object.assign(row, before); persistCache(); throw e;
+  }
+}
+
+export async function addPackingItem(group) {
+  const sort = app.bundle.packing.reduce((m, p) => Math.max(m, p.sort_order ?? 0), -1) + 1;
+  const created = await insertPackingItem({
+    trip_id: app.tripId, group_name: group, label: 'New item', sort_order: sort
+  });
+  app.bundle.packing.push(created);
+  persistCache();
+  return created;
+}
+
+export async function removePackingItem(id) {
+  app.bundle.packing = app.bundle.packing.filter(p => p.id !== id);
+  persistCache();
+  await deletePackingItem(id);
+}
+
+export async function addNote(body, { dayId = null, activityId = null } = {}) {
+  const created = await insertNote({
+    trip_id: app.tripId, day_id: dayId, activity_id: activityId,
+    author: app.who ?? 'someone', body
+  });
+  app.bundle.notes.unshift(created);
+  persistCache();
+  logChange(app.tripId, app.who ?? 'someone', 'added a note', 'note', created.id);
+  return created;
+}
+
+export async function removeNote(id) {
+  app.bundle.notes = app.bundle.notes.filter(n => n.id !== id);
+  persistCache();
+  await deleteNote(id);
 }
 
 async function reload() {

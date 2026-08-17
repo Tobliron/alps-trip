@@ -1,16 +1,24 @@
 <script>
   import { onMount } from 'svelte';
-  import { app, trip, days, today, daysUntilStart, boot, loadTrip } from './lib/state.svelte.js';
+  import { app, trip, days, today, boot, loadTrip } from './lib/state.svelte.js';
+  import { ui, goTab, TABS } from './lib/ui.svelte.js';
   import { APP_NAME } from './lib/config.js';
   import { t, fmtDate, applyDirection } from './lib/i18n.svelte.js';
+
   import LangToggle from './lib/LangToggle.svelte';
+  import SearchBar from './lib/SearchBar.svelte';
   import EditButton from './lib/EditButton.svelte';
+  import Countdown from './lib/Countdown.svelte';
+  import Dashboard from './lib/Dashboard.svelte';
   import DayCard from './lib/DayCard.svelte';
   import Backlog from './lib/Backlog.svelte';
   import ActivityEditor from './lib/ActivityEditor.svelte';
-  import DataPanel from './lib/DataPanel.svelte';
   import TripMap from './lib/TripMap.svelte';
-  import Dashboard from './lib/Dashboard.svelte';
+  import BudgetSection from './lib/BudgetSection.svelte';
+  import PackingSection from './lib/PackingSection.svelte';
+  import NotesSection from './lib/NotesSection.svelte';
+  import ActivityLog from './lib/ActivityLog.svelte';
+  import DataPanel from './lib/DataPanel.svelte';
 
   let editor = $state(null);
   const openEditor = (activity) => editor?.open(activity);
@@ -18,20 +26,15 @@
   onMount(() => { applyDirection(); boot(); });
 
   let todayRow = $derived(today());
-  let countdown = $derived(daysUntilStart());
-
-  function goToday() {
-    document.getElementById('day-' + todayRow.date)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 </script>
 
 <header class="top">
-  <div class="inner">
+  <div class="inner bar">
     <div class="brand">
       <span class="name">{APP_NAME}</span>
       <span class="tagline mono">{t('app.tagline')}</span>
     </div>
-
+    <SearchBar />
     <div class="right">
       {#if app.offline}<span class="pill warn">{t('app.offline')}</span>{/if}
       <LangToggle />
@@ -43,17 +46,28 @@
     <div class="inner trip-line">
       {#if app.trips.length > 1}
         <select value={app.tripId} onchange={(e) => loadTrip(e.currentTarget.value)}>
-          {#each app.trips as t (t.id)}<option value={t.id}>{t.title}</option>{/each}
+          {#each app.trips as tr (tr.id)}<option value={tr.id}>{tr.title}</option>{/each}
         </select>
       {:else}
         <h1>{trip.current.title}</h1>
       {/if}
-      {#if trip.current.subtitle}
-        <div class="sub mono">{trip.current.subtitle}</div>
-      {/if}
+      {#if trip.current.subtitle}<div class="sub mono">{trip.current.subtitle}</div>{/if}
     </div>
   {/if}
 </header>
+
+{#if trip.current}
+  <nav>
+    <div class="tabs" role="tablist">
+      {#each TABS as tab}
+        <button class="tab" class:active={ui.tab === tab} role="tab"
+                aria-selected={ui.tab === tab} onclick={() => goTab(tab)}>
+          {t('tab.' + tab)}
+        </button>
+      {/each}
+    </div>
+  </nav>
+{/if}
 
 <main>
   {#if app.loading}
@@ -72,19 +86,10 @@
       <p class="muted" style="margin-top:6px">{t('app.noTrips.body')}</p>
     </div>
 
-  {:else}
-    {#if countdown !== null && countdown > 0}
-      <!-- @html is safe here and only here: the only interpolated value is
-           Number(countdown), a computed integer, never anything user-typed. -->
-      <div class="countdown">
-        {@html t(countdown === 1 ? 'app.countdown.one' : 'app.countdown',
-                 { n: `<b>${Number(countdown)}</b>` })}
-      </div>
-    {:else if todayRow}
-      <!-- A summary, not a second DayCard: rendering the same day twice would
-           put two drag zones over the same activity ids and break both the
-           keyed list and drag-and-drop. -->
-      <div class="countdown live">
+  {:else if ui.tab === 'overview'}
+    <Countdown start={trip.current?.start_date} title={trip.current?.title} />
+    {#if todayRow}
+      <div class="today">
         <div>
           <b>{t('app.today')}</b> · {fmtDate(todayRow.date, { weekday: 'long', day: 'numeric', month: 'long' })}
           {#if todayRow.title} — {todayRow.title}{/if}
@@ -99,17 +104,35 @@
             {/each}
           </ul>
         {/if}
-        <button class="linkish" onclick={goToday}>{t('app.today.open')}</button>
+        <button class="linkish" onclick={() => goTab('days', 'day-' + todayRow.date)}>
+          {t('app.today.open')}
+        </button>
       </div>
     {/if}
+    <Dashboard />
 
+  {:else if ui.tab === 'days'}
     {#each days() as d (d.id)}
       <DayCard day={d} isToday={todayRow?.id === d.id} onedit={openEditor} />
     {/each}
+    <div id="backlog"><Backlog onedit={openEditor} /></div>
 
-    <Backlog onedit={openEditor} />
-    <Dashboard />
+  {:else if ui.tab === 'map'}
     <TripMap />
+
+  {:else if ui.tab === 'budget'}
+    <BudgetSection />
+
+  {:else if ui.tab === 'packing'}
+    <PackingSection />
+
+  {:else if ui.tab === 'notes'}
+    <NotesSection />
+
+  {:else if ui.tab === 'log'}
+    <ActivityLog />
+
+  {:else if ui.tab === 'backup'}
     <DataPanel />
   {/if}
 </main>
@@ -119,7 +142,7 @@
 <style>
   .top { background: var(--pine-deep); color: var(--ice); padding: 14px 16px 18px; }
   .inner { max-width: 1060px; margin-inline: auto; }
-  .inner:first-child { display: flex; align-items: center; gap: 12px; }
+  .bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .brand { display: flex; align-items: baseline; gap: 8px; }
   .name { font-family: var(--font-display); font-size: 21px; font-weight: 600; }
   .tagline { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #9FC0B5; }
@@ -133,18 +156,24 @@
   }
   .sub { font-size: 11.5px; color: #BFD4CC; margin-top: 5px; }
 
-  .countdown {
-    background: var(--glow-soft); border: 1px solid #E8B9C6;
-    border-radius: var(--radius); padding: 12px 16px; margin-bottom: 18px; font-size: 14px;
+  nav { position: sticky; top: 0; z-index: 40; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .tabs { max-width: 1060px; margin-inline: auto; display: flex; gap: 2px; overflow-x: auto; padding: 0 16px; }
+  .tab {
+    background: none; border: none; border-bottom: 3px solid transparent;
+    padding: 12px 13px 10px; font-size: 13.5px; font-weight: 500;
+    color: var(--rock-soft); white-space: nowrap;
   }
-  .countdown b { color: var(--glow); font-size: 17px; }
-  .countdown.live { background: #E2EDE8; border-color: #BBD2C8; }
-  .countdown.live b { color: var(--pine); }
-  .countdown .linkish { margin-inline-start: 0; font-size: 13px; margin-top: 6px; display: inline-block; }
+  .tab:hover { color: var(--rock); }
+  .tab.active { color: var(--pine); border-bottom-color: var(--glow); }
+  .tab:focus-visible { outline: 2px solid var(--dusk); outline-offset: -2px; }
+
+  .today {
+    background: #E2EDE8; border: 1px solid #BBD2C8;
+    border-radius: var(--radius); padding: 13px 16px; margin-bottom: 18px; font-size: 14px;
+  }
+  .today b { color: var(--pine); }
   .sleep { font-size: 11.5px; color: var(--rock-soft); margin-top: 4px; }
   .today-list { margin: 8px 0 0 18px; font-size: 13.5px; }
   .today-list li { margin-bottom: 2px; }
-
-  .backlog-title { margin-top: 26px; }
-  code { font-family: var(--font-mono); font-size: 12px; background: var(--ice); padding: 1px 5px; border-radius: 4px; }
+  .today .linkish { margin-top: 6px; display: inline-block; font-size: 13px; }
 </style>

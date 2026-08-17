@@ -120,6 +120,61 @@ export async function reorderActivities(rows) {
   if (failed) throw failed.error;
 }
 
+export async function updateBudgetItem(id, patch) {
+  const { error } = await supabase.from('budget_items').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+export async function insertBudgetItem(row) {
+  const { data, error } = await supabase.from('budget_items').insert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteBudgetItem(id) {
+  const { error } = await supabase.from('budget_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function updatePackingItem(id, patch) {
+  const { error } = await supabase.from('packing_items').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+export async function insertPackingItem(row) {
+  const { data, error } = await supabase.from('packing_items').insert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deletePackingItem(id) {
+  const { error } = await supabase.from('packing_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function insertNote(row) {
+  const { data, error } = await supabase.from('trip_notes_v2').insert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteNote(id) {
+  const { error } = await supabase.from('trip_notes_v2').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** The change log is read-only in the UI and can grow, so it is fetched
+    separately from the trip bundle rather than on every load. */
+export async function fetchChangeLog(tripId, limit = 200) {
+  const { data, error } = await supabase
+    .from('change_log').select('*')
+    .eq('trip_id', tripId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
 export async function logChange(tripId, author, action, entity, entityId) {
   const { error } = await supabase.from('change_log').insert({
     trip_id: tripId, author, action, entity, entity_id: entityId ?? null
