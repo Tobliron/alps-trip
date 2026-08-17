@@ -6,7 +6,7 @@ export const ui = $state({
   jumpTo: null            // element id to scroll to once the tab has rendered
 });
 
-export const TABS = ['overview', 'days', 'map', 'budget', 'packing', 'notes', 'log', 'backup'];
+export const TABS = ['overview', 'days', 'calendar', 'map', 'budget', 'packing', 'notes', 'log', 'backup'];
 
 export function goTab(tab, anchor = null) {
   ui.tab = TABS.includes(tab) ? tab : 'overview';

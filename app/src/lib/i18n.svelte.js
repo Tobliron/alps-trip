@@ -98,8 +98,13 @@ const en = {
   'dash.onMap': 'on the map', 'dash.photos': '{n} photos uploaded',
   'dash.untilLine': '{n} days until {trip}. {m} things still to schedule.',
 
-  'tab.overview': 'Overview', 'tab.days': 'Days', 'tab.map': 'Map', 'tab.budget': 'Budget',
-  'tab.packing': 'Packing', 'tab.notes': 'Notes', 'tab.log': 'Activity', 'tab.backup': 'Backup',
+  'tab.overview': 'Overview', 'tab.days': 'Days', 'tab.calendar': 'Calendar', 'tab.map': 'Map',
+  'tab.budget': 'Budget', 'tab.packing': 'Packing', 'tab.notes': 'Notes', 'tab.log': 'Activity',
+  'tab.backup': 'Backup',
+
+  'cal.title': 'Calendar',
+  'cal.blurb': 'The whole trip at a glance. Click any day to open it.',
+  'cal.nothing': 'nothing planned',
 
   'cd.until': 'Counting down to',
   'cd.days': 'days', 'cd.hours': 'hours', 'cd.minutes': 'minutes', 'cd.seconds': 'seconds',
@@ -227,8 +232,13 @@ const he = {
   'dash.onMap': 'על המפה', 'dash.photos': '{n} תמונות הועלו',
   'dash.untilLine': 'עוד {n} ימים ל{trip}. {m} דברים עדיין לשבץ.',
 
-  'tab.overview': 'סקירה', 'tab.days': 'ימים', 'tab.map': 'מפה', 'tab.budget': 'תקציב',
-  'tab.packing': 'ציוד', 'tab.notes': 'הערות', 'tab.log': 'פעילות', 'tab.backup': 'גיבוי',
+  'tab.overview': 'סקירה', 'tab.days': 'ימים', 'tab.calendar': 'לוח שנה', 'tab.map': 'מפה',
+  'tab.budget': 'תקציב', 'tab.packing': 'ציוד', 'tab.notes': 'הערות', 'tab.log': 'פעילות',
+  'tab.backup': 'גיבוי',
+
+  'cal.title': 'לוח שנה',
+  'cal.blurb': 'כל הטיול במבט אחד. לחצו על יום כדי לפתוח אותו.',
+  'cal.nothing': 'אין תוכנית',
 
   'cd.until': 'הספירה לאחור ל',
   'cd.days': 'ימים', 'cd.hours': 'שעות', 'cd.minutes': 'דקות', 'cd.seconds': 'שניות',

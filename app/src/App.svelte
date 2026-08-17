@@ -13,6 +13,7 @@
   import DayCard from './lib/DayCard.svelte';
   import Backlog from './lib/Backlog.svelte';
   import ActivityEditor from './lib/ActivityEditor.svelte';
+  import CalendarSection from './lib/CalendarSection.svelte';
   import TripMap from './lib/TripMap.svelte';
   import BudgetSection from './lib/BudgetSection.svelte';
   import PackingSection from './lib/PackingSection.svelte';
@@ -116,6 +117,9 @@
       <DayCard day={d} isToday={todayRow?.id === d.id} onedit={openEditor} />
     {/each}
     <div id="backlog"><Backlog onedit={openEditor} /></div>
+
+  {:else if ui.tab === 'calendar'}
+    <CalendarSection />
 
   {:else if ui.tab === 'map'}
     <TripMap />
